@@ -1,4 +1,4 @@
-KERNEL_VERSION=5.4.3
+KERNEL_VERSION=5.16.4
 BUSYBOX_VERSION=1.35.0
 
 mkdir -p rootfs
@@ -33,15 +33,7 @@ rm -f linuxrc
 cd $ROOTFS
 mkdir -p bin dev mnt proc sys tmp
 
-echo '#!/bin/sh' > init
-echo 'dmesg -n 1' >> init
-echo 'mount -t devtmpfs none /dev' >> init
-echo 'mount -t proc none /proc' >> init
-echo 'mount -t sysfs none /sys' >> init
-echo 'fbdoom -iwad /bin/doom1.wad' >> init
-echo 'clear' >> init
-echo 'setsid cttyhack /bin/sh' >> init
-
+cp $SOURCE_DIR/misc-files/init $ROOTFS
 chmod +x init
 
 cd $ROOTFS
@@ -49,17 +41,14 @@ find . | cpio -R root:root -H newc -o | gzip > $SOURCE_DIR/iso/boot/rootfs.gz
 
 cd $STAGING
 cd linux-${KERNEL_VERSION}
-make -j$(nproc) defconfig
-sed -i "s|.*CONFIG_NET=y.*|# CONFIG_NET is not set|" .config
-sed -i "s|.*CONFIG_SOUND=y.*|# CONFIG_SOUND is not set|" .config
-sed -i "s|.*CONFIG_EFI=y.*|# CONFIG_EFI is not set|" .config
-sed -i "s|.*CONFIG_EFI_STUB=y.*|# CONFIG_EFI_STUB is not set|" .config
-sed -i "s/^CONFIG_DEBUG_KERNEL.*/\\# CONFIG_DEBUG_KERNEL is not set/" .config
-sed -i "s|.*# CONFIG_KERNEL_XZ is not set.*|CONFIG_KERNEL_XZ=y|" .config
-sed -i "s|.*CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y.*|# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set|" .config
-sed -i "s|.*# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set.*|CONFIG_CC_OPTIMIZE_FOR_SIZE=y|" .config
-sed -i "s|.*CONFIG_KERNEL_GZIP=y.*|# CONFIG_KERNEL_GZIP is not set|" .config
-sed -i "s|.*CONFIG_DEFAULT_HOSTNAME=*|CONFIG_DEFAULT_HOSTNAME=\"DoomLinux\"|" .config
+make mrproper
+cp $SOURCE_DIR/misc-files/linux.config .config
+make olddefconfig
+#make -j$(nproc) defconfig
+grep -q '^CONFIG_MODULES=y$' .config && make INSTALL_MOD_PATH=$ROOTFS/usr INSTALL_MOD_STRIP=1 modules_install || true
+
+make INSTALL_HDR_PATH=$ROOTFS/usr INSTALL_MOD_STRIP=1 headers_install
+
 
 make bzImage -j$(nproc)
 cp arch/x86/boot/bzImage $SOURCE_DIR/iso/boot/bzImage
@@ -84,5 +73,5 @@ menuentry "fiordland" {
 EOF
 
 cd $SOURCE_DIR
-grub-mkrescue --compress=xz -o DoomLinux.iso iso 
+grub-mkrescue --compress=xz -o fiordland.iso iso 
 set +ex
