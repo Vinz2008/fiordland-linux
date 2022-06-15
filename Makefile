@@ -4,4 +4,4 @@ build:
 	./scripts/build.sh
 
 clean:
-	rm -rf iso rootfs staging
+	rm -rf iso rootfs staging fiordland.iso

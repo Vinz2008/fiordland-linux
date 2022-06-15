@@ -1,5 +1,5 @@
-KERNEL_VERSION=5.16.4
-BUSYBOX_VERSION=1.35.0
+KERNEL_VERSION=5.18.1
+BUSYBOX_VERSION=1.34.1
 
 mkdir -p rootfs
 mkdir -p staging
@@ -22,6 +22,7 @@ tar -xvf busybox.tar.bz2
 
 set -ex
 cd busybox-${BUSYBOX_VERSION}
+make distclean
 make defconfig
 sed -i "s|.*CONFIG_STATIC.*|CONFIG_STATIC=y|" .config
 make busybox install -j$(nproc)
@@ -33,28 +34,35 @@ rm -f linuxrc
 cd $ROOTFS
 mkdir -p bin dev mnt proc sys tmp
 
-cp $SOURCE_DIR/misc-files/init $ROOTFS
-chmod +x init
+#cp $SOURCE_DIR/misc-files/init $ROOTFS/boot/initrd
+#chmod +x $ROOTFS/boot/initrd
 
-cd $ROOTFS
-find . | cpio -R root:root -H newc -o | gzip > $SOURCE_DIR/iso/boot/rootfs.gz
+
+
+#mkdir $SOURCE_DIR/INITRAMFS_BUILD
+#cd $SOURCE_DIR/INITRAMFS_BUILD
+cp $SOURCE_DIR/misc-files/init .
+chmod a+x init
+#cp -f $STAGING/busybox-${BUSYBOX_VERSION}/busybox bin/busybox
+ln -sf busybox bin/sh 2> /dev/null
+echo "Creating initramfs cpio archive"
+find . -print0 | cpio --null -ov --format=newc | gzip --best > $SOURCE_DIR/iso/boot/rootfs.gz
+#cd $ROOTFS
+#find . | cpio --null -ov --format=newc | gzip --best > $SOURCE_DIR/iso/boot/rootfs.gz
 
 cd $STAGING
 cd linux-${KERNEL_VERSION}
 make mrproper
-cp $SOURCE_DIR/misc-files/linux.config .config
+cp "$SOURCE_DIR/misc-files/linux.config" '.config'
 make olddefconfig
 #make -j$(nproc) defconfig
-grep -q '^CONFIG_MODULES=y$' .config && make INSTALL_MOD_PATH=$ROOTFS/usr INSTALL_MOD_STRIP=1 modules_install || true
+make -j$(nproc)
+grep -q '^CONFIG_MODULES=y$' .config && make modules -j$(nproc) && make INSTALL_MOD_PATH=$ROOTFS/usr INSTALL_MOD_STRIP=1 modules_install
 
 make INSTALL_HDR_PATH=$ROOTFS/usr INSTALL_MOD_STRIP=1 headers_install
 
-
-make bzImage -j$(nproc)
-cp arch/x86/boot/bzImage $SOURCE_DIR/iso/boot/bzImage
 cp System.map $SOURCE_DIR/iso/boot/System.map
-
-make INSTALL_HDR_PATH=$ROOTFS headers_install -j$(nproc)
+cp -f "arch/x86/boot/"*Image "$SOURCE_DIR/iso/boot/vmlinuz"
 
 cd $SOURCE_DIR/iso/boot
 mkdir -p grub
@@ -67,7 +75,7 @@ set menu_color_normal=white/black
 set menu_color_highlight=white/green
 root (hd0,0)
 menuentry "fiordland" {      
-    linux  /boot/bzImage
+    linux  /boot/vmlinuz
     initrd /boot/rootfs.gz
 }
 EOF
