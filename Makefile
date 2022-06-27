@@ -5,3 +5,6 @@ build:
 
 clean:
 	rm -rf iso rootfs staging fiordland.iso
+
+qemu:
+	./scripts/qemu.sh

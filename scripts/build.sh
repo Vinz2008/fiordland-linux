@@ -6,11 +6,21 @@ mkdir -p staging
 mkdir -p iso/boot
 
 SOURCE_DIR=$PWD
+AIROOTFS=$SOURCE_DIR/airootfs
 ROOTFS=$SOURCE_DIR/rootfs
 STAGING=$SOURCE_DIR/staging
 ISO_DIR=$SOURCE_DIR/iso
 
-mkdir -p $ROOTFS/{boot,dev,sys,home,mnt,proc,run,tmp,var} $ROOTFS/usr/{bin,lib} $ROOTFS/var/{empty,log}
+mkdir -p $ROOTFS/{boot,dev,sys,home,mnt,proc,run,tmp,var,etc} $ROOTFS/usr/{bin,lib} $ROOTFS/var/{empty,log}
+touch $ROOTFS/var/log/lastlog
+chmod -v 664 $ROOTFS/var/log/lastlog
+mkdir -pv $ROOTFS/etc/network/if-{post-{up,down},pre-{up,down},up,down}.d
+mkdir -pv $ROOTFS/usr/share/udhcpc
+chmod +x $ROOTFS/usr/share/udhcpc/default.script
+
+
+cp -v -r $AIROOTFS/* $ROOTFS 
+
 
 cd $STAGING
 wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz

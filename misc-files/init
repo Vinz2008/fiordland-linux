@@ -5,8 +5,39 @@ PATH="/bin:/usr/bin"
 busybox mount -t proc proc /proc -o nosuid,noexec,nodev
 busybox mount -t sysfs sys /sys -o nosuid,noexec,nodev
 busybox mount -t devtmpfs dev /dev
+/bin/mkdir /dev/pts
+/bin/mkdir /dev/shm
+/bin/echo "/sbin/mdev" > /proc/sys/kernel/hotplug
+echo -n "Starting mdev: "
+/sbin/mdev -s
+echo -n "Mounting devpts: "
+/bin/mount -t devpts none /dev/pts
+
+if [ -x /sbin/hwclock ] && [ -e /dev/rtc0 ]; then
+	echo -n "Setting system clock: "
+	hwclock --hctosys --utc
+fi
+
 
 busybox mount / -o remount,rw
+
+echo -n "Linking /var/tmp and /tmp: "
+ln -s ../tmp /var/tmp
+
+
+echo -n "Cleaning up system: "
+rm -rf /var/run/*
+> /var/run/utmp
+touch /var/log/wtmp
+touch /var/log/messages
+chmod 0664 /var/run/utmp
+chmod 0664 /var/log/wtmp
+chmod 0660 /var/log/messages
+rm -rf /tmp/*
+
+
+echo -n "Setting up interface lo: "
+ifconfig lo up 127.0.0.1
 busybox --install /bin
 echo 0 > /proc/sys/kernel/printk
 
