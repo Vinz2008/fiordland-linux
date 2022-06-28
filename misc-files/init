@@ -42,4 +42,4 @@ busybox --install /bin
 echo 0 > /proc/sys/kernel/printk
 
 echo "Welcome to init ram filesystem :)"
-exec sh
+exec /bin/sh

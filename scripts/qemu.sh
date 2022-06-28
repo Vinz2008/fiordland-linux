@@ -1,1 +1,1 @@
-qemu-system-x86_64 -cdrom fiordland.iso 
+qemu-system-x86_64 -cdrom fiordland.iso -m 4G  -enable-kvm
