@@ -21,7 +21,14 @@ ROOTFS=$SOURCE_DIR/rootfs
 STAGING=$SOURCE_DIR/staging
 ISO_DIR=$SOURCE_DIR/iso
 
-mkdir -p $ROOTFS/{bin,boot,dev,sys,home,mnt,proc,run,tmp,var,etc,sbin,lib/{firmware,modules}} $ROOTFS/usr/{,local/}{bin,include,lib,sbin,share} $ROOTFS/var/{cache,lib,local,lock,opt,run,spool,empty,log}
+mkdir -p $ROOTFS/{bin,boot,dev,sys,home,mnt,proc,run,tmp,var,etc,sbin,lib/{firmware,modules}} $ROOTFS/usr/{,local/}{bin,include,lib,sbin,share/{color,dict,doc,info,locale,man,misc,terminfo,zoneinfo}} $ROOTFS/var/{cache,lib,local,lock,opt,run,spool,empty,log}
+touch $ROOTFS/var/log/{btmp,lastlog,faillog,wtmp}
+chgrp -v utmp $ROOTFS/var/log/lastlog
+chmod -v 664  $ROOTFS/var/log/lastlog
+chmod -v 600  $ROOTFS/var/log/btmp
+mkdir -p $ROOTFS/media/{floppy,cdrom}
+ln -sfv $ROOTFS/run $ROOTFS/var/run
+ln -sfv $ROOTFS/run/lock $ROOTFS/var/lock
 install -dv -m 0750 $ROOTFS/root
 install -dv -m 1777 $ROOTFS/{var/,}tmp
 touch $ROOTFS/var/log/lastlog
@@ -29,7 +36,7 @@ chmod -v 664 $ROOTFS/var/log/lastlog
 mkdir -pv $ROOTFS/etc/network/if-{post-{up,down},pre-{up,down},up,down}.d
 mkdir -pv $ROOTFS/usr/share/udhcpc
 chmod +x $ROOTFS/usr/share/udhcpc/default.script
-ln -svf $ROOTFS/proc/mounts $ROOTFS/etc/mtab
+ln -sv $ROOTFS/proc/self/mounts $ROOTFS/etc/mtab
 mknod -m 600 $LFS/dev/console c 5 1
 mknod -m 666 $LFS/dev/null c 1 3
 
