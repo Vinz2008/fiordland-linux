@@ -2,16 +2,17 @@
 
 PATH="/bin:/usr/bin"
 
-busybox --install /bin
+/bin/busybox --install /bin
 
 mount -t proc proc /proc -o nosuid,noexec,nodev
 mount -t sysfs sys /sys -o nosuid,noexec,nodev
 mount -t devtmpfs dev /dev
 mkdir /dev/pts
 mkdir /dev/shm
+mkdir -p /proc/sys/kernel/
 echo "/sbin/mdev" > /proc/sys/kernel/hotplug
 echo -n "Starting mdev: "
-mdev -s
+/sbin/mdev -s
 echo -n "Mounting devpts: "
 mount -t devpts none /dev/pts
 
