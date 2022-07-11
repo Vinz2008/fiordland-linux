@@ -6,9 +6,7 @@ IANA_ETC_VERSION=2.30
 GCC_VERSION=6.2.0
 MUSL_VERSION=1.1.16
 
-
-ARCH_VAR=$(uname -m)
-TARGET_VAR=$ARCH_VAR-unknown-linux-gnu
+TARGET_VAR=$(uname -m)-lfs-linux-gnu
 HOST_VAR=$(echo ${MACHTYPE} | sed -e 's/-[^-]*/-cross/')
 
 CC=gcc
@@ -29,10 +27,10 @@ ROOTFS=$SOURCE_DIR/rootfs
 STAGING=$SOURCE_DIR/staging
 ISO_DIR=$SOURCE_DIR/iso
 
-export PATH=$PATH:$ROOTFS/cross-tools/bin
+export PATH=$PATH:$ROOTFS/tools/bin:$ROOTFS/cross-tools/bin
 
 
-mkdir -p $ROOTFS/{bin,boot,dev,sys,home,mnt,proc,run,tmp,var,etc,sbin,lib/{firmware,modules}} $ROOTFS/usr/{,local/}{bin,include,lib,sbin,share/{color,dict,doc,info,locale,man,misc,terminfo,zoneinfo}} $ROOTFS/var/{cache,lib,local,lock,opt,run,spool,empty,log}
+mkdir -p $ROOTFS/{bin,boot,dev,sys,home,mnt,proc,run,tmp,var,etc,sbin,lib/{firmware,modules},lib64/{firmware,modules}} $ROOTFS/usr/{,local/}{bin,include,lib,sbin,share/{color,dict,doc,info,locale,man,misc,terminfo,zoneinfo}} $ROOTFS/var/{cache,lib,local,lock,opt,run,spool,empty,log}
 touch $ROOTFS/var/log/{btmp,lastlog,faillog,wtmp}
 chgrp -v utmp $ROOTFS/var/log/lastlog
 chmod -v 664  $ROOTFS/var/log/lastlog
@@ -60,186 +58,405 @@ cp -v -r $AIROOTFS/* $ROOTFS
 # CROSS COMPILATION TOOLS
 cd $STAGING
 
-wget -nc -O bc.tar.bz2 http://alpha.gnu.org/gnu/bc/bc-1.06.95.tar.bz2
-wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz
-wget -nc -O file.tar.gz ftp://ftp.astron.com/pub/file/file-5.15.tar.gz
-wget -nc -O m4.tar.xz http://ftp.gnu.org/gnu/m4/m4-1.4.17.tar.xz
-wget -nc -O ncurses.tar.gz ftp://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.9.tar.gz
-wget -nc -O ncurses-bash.patch http://patches.cross-lfs.org/2.1.0/ncurses-5.9-bash_fix-1.patch
-wget -nc -O gmp.tar.xz http://ftp.gnu.org/gnu/gmp/gmp-5.1.3.tar.xz
-wget -nc -O mpfr.tar.xz http://www.mpfr.org/mpfr-3.1.2/mpfr-3.1.2.tar.xz
-wget -nc -O mpc.tar.gz https://ftp.gnu.org/gnu/mpc/mpc-1.0.1.tar.gz
-wget -nc -O cloog.tar.gz http://www.bastoul.net/cloog/pages/download/cloog-0.18.0.tar.gz
-wget -nc -O binutils.tar.bz2 http://ftp.gnu.org/gnu/binutils/binutils-2.23.2.tar.bz2
-wget -nc -O gcc.tar.bz2 ftp://gcc.gnu.org/pub/gcc/releases/gcc-4.8.1/gcc-4.8.1.tar.bz2
-wget -nc -O gcc-branch_update.patch http://patches.cross-lfs.org/2.1.0/gcc-4.8.1-branch_update-3.patch
-wget -nc -O gcc-pure64_specs.patch http://patches.cross-lfs.org/2.1.0/gcc-4.8.1-pure64_specs-1.patch
-wget -nc -O eglibc.tar.xz https://launchpad.net/debian/+archive/primary/+sourcefiles/eglibc/2.18-2/eglibc_2.18.orig.tar.xz
-
-tar -xvf bc.tar.bz2
-tar -xvf kernel.tar.xz
-tar -xvf file.tar.gz
-tar -xvf m4.tar.xz
-tar -xvf ncurses.tar.gz
-tar -xvf gmp.tar.xz
-tar -xvf mpfr.tar.xz
-tar -xvf mpc.tar.gz
-tar -xvf cloog.tar.gz
-tar -xvf binutils.tar.bz2
-tar -xvf gcc.tar.bz2
-tar -xvf eglibc.tar.xz
+wget -nc -O binutils.tar.xz https://ftp.gnu.org/gnu/binutils/binutils-2.38.tar.xz
+wget -nc -O gcc.tar.xz https://ftp.gnu.org/gnu/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
+wget -nc -O mpfr.tar.xz https://www.mpfr.org/mpfr-4.1.0/mpfr-4.1.0.tar.xz
+wget -nc -O gmp.tar.xz https://ftp.gnu.org/gnu/gmp/gmp-6.2.1.tar.xz
+wget -nc -O mpc.tar.gz https://ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz
+wget -nc -O linux.tar.xz https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.16.9.tar.xz
+wget -nc -O glibc.tar.xz https://ftp.gnu.org/gnu/glibc/glibc-2.35.tar.xz
+wget -nc https://www.linuxfromscratch.org/patches/lfs/11.1/glibc-2.35-fhs-1.patch
 
 
 set -ex
 
 cd $STAGING
-cd bc-1.06.95
-./configure --prefix=$ROOTFS/cross-tools
+tar -xvf binutils.tar.xz
+cd binutils-2.38
+mkdir -v build
+cd build
+../configure --prefix=$ROOTFS/tools \
+             --with-sysroot=$ROOTFS \
+             --target=$TARGET_VAR   \
+             --disable-nls       \
+             --disable-werror
+
 make -j$(nproc)
 make install -j$(nproc)
 
+cd $STAGING
+rm -rf binutils-2.38
+tar -xvf gcc.tar.xz
+cd gcc-11.2.0
+tar -xf ../mpfr.tar.xz
+mv -v mpfr-4.1.0 mpfr
+tar -xf ../gmp.tar.xz
+mv -v gmp-6.2.1 gmp
+tar -xf ../mpc.tar.gz
+mv -v mpc-1.2.1 mpc
+case $(uname -m) in
+  x86_64)
+    sed -e '/m64=/s/lib64/lib/' \
+        -i.orig gcc/config/i386/t-linux64
+ ;;
+esac
+rm -rf build
+mkdir -v build
+cd build
+../configure                  \
+    --target=$TARGET_VAR         \
+    --prefix=$ROOTFS/tools       \
+    --with-glibc-version=2.35 \
+    --with-sysroot=$ROOTFS       \
+    --with-newlib             \
+    --without-headers         \
+    --enable-initfini-array   \
+    --disable-nls             \
+    --disable-shared          \
+    --disable-multilib        \
+    --disable-decimal-float   \
+    --disable-threads         \
+    --disable-libatomic       \
+    --disable-libgomp         \
+    --disable-libquadmath     \
+    --disable-libssp          \
+    --disable-libvtv          \
+    --disable-libstdcxx       \
+    --disable-bootstrap \
+    --enable-languages=c,c++
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
+  `dirname $($TARGET_VAR-gcc -print-libgcc-file-name)`/install-tools/include/limits.h
+
 
 cd $STAGING
-cd linux-${KERNEL_VERSION}
+rm -rf gcc-11.2.0
+tar -xvf linux.tar.xz
+cd linux-5.16.9
 make mrproper
-make ARCH=x86_64 INSTALL_HDR_PATH=$ROOTFS/tools headers_install
-
+make headers
+find usr/include -name '.*' -delete
+rm usr/include/Makefile
+cp -rv usr/include $ROOTFS/usr
 
 cd $STAGING
-cd file-5.15
-./configure --prefix=$ROOTFS/cross-tools --disable-static
+rm -rf linux-5.16.9
+tar -xvf glibc.tar.xz
+cd glibc-2.35
+case $(uname -m) in
+    i?86)   ln -sfv ld-linux.so.2 $ROOTFS/lib/ld-lsb.so.3
+    ;;
+    x86_64) ln -sfv ../lib/ld-linux-x86-64.so.2 $ROOTFS/lib64
+            ln -sfv ../lib/ld-linux-x86-64.so.2 $ROOTFS/lib64/ld-lsb-x86-64.so.3
+    ;;
+esac
+patch -Np1 -i ../glibc-2.35-fhs-1.patch
+mkdir -v build
+cd build
+echo "rootsbindir=/usr/sbin" > configparms
+../configure                             \
+      --prefix=/usr                      \
+      --host=$TARGET_VAR                    \
+      --build=$(../scripts/config.guess) \
+      --enable-kernel=3.2                \
+      --with-headers=$ROOTFS/usr/include    \
+      libc_cv_slibdir=/usr/lib
 make -j$(nproc)
-make install -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+sed '/RTLDLIST=/s@/usr@@g' -i $ROOTFS/usr/bin/ldd
+$ROOTFS/tools/libexec/gcc/$TARGET_VAR/11.2.0/install-tools/mkheaders
 
-: '
 cd $STAGING
-cd m4-1.4.17
-./configure --prefix=$ROOTFS/cross-tools
+rm -rf glibc-2.35
+tar -xvf gcc.tar.xz
+cd gcc-11.2.0
+mkdir -v build
+cd build
+../libstdc++-v3/configure           \
+    --host=$TARGET_VAR                 \
+    --build=$(../config.guess)      \
+    --prefix=/usr                   \
+    --disable-multilib              \
+    --disable-nls                   \
+    --disable-libstdcxx-pch         \
+    --with-gxx-include-dir=/tools/$TARGET_VAR/include/c++/11.2.0
 make -j$(nproc)
-make install -j$(nproc)
-'
-
-: '
-cd $STAGING
-cd ncurses-5.9
-patch -Np1 -i ../ncurses-bash.patch
-./configure --prefix=$ROOTFS/cross-tools --without-debug --without-shared
-make -C include -j$(nproc)
-make -C progs tic -j$(nproc)
-install -v -m755 progs/tic /cross-tools/bin
-
+make DESTDIR=$ROOTFS install -j$(nproc)
+echo 'int main(){}' > dummy.c
+$TARGET_VAR-gcc dummy.c
+readelf -l a.out | grep '/ld-linux'
 
 cd $STAGING
-cd gmp-5.1.3
-./configure --prefix=$ROOTFS/cross-tools --enable-cxx --disable-static
-make -j$(nproc)
-make install -j$(nproc)
-
-cd $STAGING
-cd mpfr-3.1.2
-LDFLAGS="-Wl,-rpath,$ROOTFS/cross-tools/lib" ./configure --prefix=$ROOTFS/cross-tools --disable-static --with-gmp=$ROOTFS/cross-tools
-make -j$(nproc)
-make install -j$(nproc)
-
-cd $STAGING
-cd mpc-1.0.1
-LDFLAGS="-Wl,-rpath,$ROOTFS/cross-tools/lib" ./configure --prefix=$ROOTFS/cross-tools --disable-static --with-gmp=$ROOTFS/cross-tools --with-mpfr=$ROOTFS/cross-tools
-make -j$(nproc)
-make install -j$(nproc)
-
-cd $STAGING
-cd cloog-0.18.0
-LDFLAGS="-Wl,-rpath,$ROOTFS/cross-tools/lib" . ./configure --prefix=$ROOTFS/cross-tools --disable-static --with-gmp-prefix=$ROOTFS/cross-tools
-make -j$(nproc)
-make install -j$(nproc)
-
-cd $STAGING
-cd binutils-2.23.2
-sed -i -e 's/@colophon/@@colophon/' -e 's/~doc at cygnus.com/doc@@cygnus.com/' bfd/doc/bfd.texinfo
-mkdir -v ../binutils-build
-cd ../binutils-build
-AR=ar AS=as ../binutils-2.23.2/configure \
-  --prefix=$ROOTFS/cross-tools --host=${HOST_VAR} --target=${TARGET_VAR} \
-  --with-sysroot=${ROOTFS} --with-lib-path=$ROOTFS/tools/lib --disable-nls \
-  --disable-static --enable-64-bit-bfd --disable-multilib
-make configure-host
-make
-make install
-cp -v ../binutils-2.23.2/include/libiberty.h $ROOTFS/tools/include
-
-cd $STAGING
-cd gcc-4.8.1
-patch -Np1 -i ../gcc-branch_update.patch
-patch -Np1 -i ../gcc-pure64_specs.patch
-echo -en '\n#undef STANDARD_STARTFILE_PREFIX_1\n#define STANDARD_STARTFILE_PREFIX_1 "/tools/lib/"\n' >> gcc/config/linux.h
-echo -en '\n#undef STANDARD_STARTFILE_PREFIX_2\n#define STANDARD_STARTFILE_PREFIX_2 ""\n' >> gcc/config/linux.h
-touch $ROOTFS/tools/include/limits.h
-mkdir -v ../gcc-build
-cd ../gcc-build
-AR=ar LDFLAGS="-Wl,-rpath,$ROOTFS/cross-tools/lib" \
-  ../gcc-4.8.1/configure --prefix=$ROOTFS/cross-tools \
-  --build=${HOST_VAR} --host=${HOST_VAR} --target=${TARGET_VAR} \
-  --with-sysroot=${ROOTFS} --with-local-prefix=$ROOTFS/tools \
-  --with-native-system-header-dir=$ROOTFS/tools/include --disable-nls \
-  --with-isl=$ROOTFS/cross-tools --with-cloog=$ROOTFS/cross-tools --with-mpc=$ROOTFS/cross-tools \
-  --without-headers --with-newlib --disable-decimal-float --disable-libgomp \
-  --disable-libmudflap --disable-libssp --disable-threads --disable-multilib \
-  --disable-libatomic --disable-libitm --disable-libsanitizer \
-  --disable-libquadmath --disable-target-libiberty --disable-target-zlib \
-  --with-system-zlib --enable-cloog-backend=isl --disable-isl-version-check \
-  --enable-languages=c --enable-checking=release
-make all-gcc all-target-libgcc -j$(nproc)
-make install-gcc install-target-libgcc -j$(nproc)
-
-cd $STAGING
-cd eglibc-2.18
-mkdir -v ../eglibc-build
-cd ../eglibc-builds
-echo "libc_cv_ssp=no" > config.cache
-BUILD_CC="gcc" CC="${TARGET_VAR}-gcc -m 64" \
-      AR="${TARGET_VAR}-ar" RANLIB="${TARGET_VAR}-ranlib" \
-      ../eglibc-2.18/configure --prefix=$ROOTFS/tools \
-      --host=${TARGET_VAR} --build=${HOST_VAR} \
-      --disable-profile --with-tls --enable-kernel=2.6.32 --with-__thread \
-      --with-binutils=$ROOTFS/cross-tools/bin --with-headers=$ROOTFS/tools/include \
-      --enable-obsolete-rpc --cache-file=config.cache
-
-make -j$(nproc)
-make install -j$(nproc)
-mv -v /tools/include/gnu/stubs{-64,}.h
-
-rm -rf $STAGING/gcc-4.8.1
-rm -rf $STAGING/gcc-build
-tar -xvf gcc.tar.bz2
-patch -Np1 -i ../gcc-branch_update.patch
-patch -Np1 -i ../gcc-pure64_specs.patch
-echo -en '\n#undef STANDARD_STARTFILE_PREFIX_1\n#define STANDARD_STARTFILE_PREFIX_1 "/tools/lib/"\n' >> gcc/config/linux.h
-echo -en '\n#undef STANDARD_STARTFILE_PREFIX_2\n#define STANDARD_STARTFILE_PREFIX_2 ""\n' >> gcc/config/linux.h
-mkdir -v ../gcc-build
-cd ../gcc-build
-AR=ar LDFLAGS="-Wl,-rpath,$ROOTFS/cross-tools/lib" \
-  ../gcc-4.8.1/configure --prefix=$ROOTFS/cross-tools \
-  --build=${HOST_VAR} --target=${TARGET_VAR} --host=${HOST_VAR} \
-  --with-sysroot=${ROOTFS} --with-local-prefix=$ROOTFS/tools \
-  --with-native-system-header-dir=$ROOTFS/tools/include --disable-nls \
-  --with-sysroot=$ROOTFS --with-local-prefix=$ROOTFS/tools --disable-nls \
-  --enable-shared --disable-static --enable-languages=c,c++ \
-  --enable-__cxa_atexit --enable-c99 --enable-long-long --enable-threads=posix \
-  --disable-multilib --with-mpc=$ROOTFS/cross-tools --with-mpfr=$ROOTFS/cross-tools \
-  --with-gmp=$ROOTFS/cross-tools --with-cloog=$ROOTFS/cross-tools \
-  --enable-cloog-backend=isl --with-isl=$ROOTFS/cross-tools \
-  --disable-isl-version-check --with-system-zlib --enable-checking=release \
-  --enable-libstdcxx-time
-make AS_FOR_TARGET="${TARGET_VAR}-as" \
-    LD_FOR_TARGET="${TARGET_VAR}-ld"
-make install
-
-'
+rm -rf gcc-11.2.0
 
 set +ex
 
+# TEMPORARY TOOLS
+
+cd $STAGING
+wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz
+wget -nc -O m4.tar.xz https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.xz
+wget -nc -O ncurses.tar.gz https://invisible-mirror.net/archives/ncurses/ncurses-6.3.tar.gz
+wget -nc -O bash.tar.gz https://ftp.gnu.org/gnu/bash/bash-5.1.16.tar.gz
+wget -nc -O coreutils.tar.xz https://ftp.gnu.org/gnu/coreutils/coreutils-9.0.tar.xz
+wget -nc -O diffutils.tar.xz https://ftp.gnu.org/gnu/diffutils/diffutils-3.8.tar.xz
+wget -nc -O file.tar.gz https://astron.com/pub/file/file-5.41.tar.gz
+wget -nc -O findutils.tar.xz https://ftp.gnu.org/gnu/findutils/findutils-4.9.0.tar.xz
+wget -nc -O gawk.tar.xz https://ftp.gnu.org/gnu/gawk/gawk-5.1.1.tar.xz
+wget -nc -O grep.tar.xz https://ftp.gnu.org/gnu/grep/grep-3.7.tar.xz
+wget -nc -O gzip.tar.xz https://ftp.gnu.org/gnu/gzip/gzip-1.11.tar.xz
+wget -nc -O make.tar.gz https://ftp.gnu.org/gnu/make/make-4.3.tar.gz
+wget -nc -O patch.tar.xz https://ftp.gnu.org/gnu/patch/patch-2.7.6.tar.xz
+wget -nc -O sed.tar.xz https://ftp.gnu.org/gnu/sed/sed-4.8.tar.xz
+wget -nc -O tar.tar.xz https://ftp.gnu.org/gnu/tar/tar-1.34.tar.xz
+wget -nc -O xz.tar.xz https://tukaani.org/xz/xz-5.2.5.tar.xz
 
 
+set -ex
+
+cd $STAGING
+tar -xvf m4.tar.xz
+cd m4-1.4.19
+./configure --prefix=/usr   \
+            --host=$TARGET_VAR \
+            --build=$(build-aux/config.guess)
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf m4-1.4.19
+tar -xvf ncurses.tar.gz
+cd ncurses-6.3
+sed -i s/mawk// configure
+mkdir build
+pushd build
+  ../configure
+  make -C include -j$(nproc)
+  make -C progs tic -j$(nproc)
+popd
+./configure --prefix=/usr                \
+            --host=$TARGET_VAR              \
+            --build=$(./config.guess)    \
+            --mandir=/usr/share/man      \
+            --with-manpage-format=normal \
+            --with-shared                \
+            --without-debug              \
+            --without-ada                \
+            --without-normal             \
+            --disable-stripping          \
+            --enable-widec
+make -j$(nproc)
+make DESTDIR=$ROOTFS TIC_PATH=$(pwd)/build/progs/tic install
+echo "INPUT(-lncursesw)" > $ROOTFS/usr/lib/libncurses.so
+
+cd $STAGING
+rm -rf ncurses-6.3
+tar -xvf bash.tar.gz
+cd bash-5.1.16
+./configure --prefix=/usr                   \
+            --build=$(support/config.guess) \
+            --host=$TARGET_VAR                 \
+            --without-bash-malloc
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+ln -sv bash $ROOTFS/bin/sh
+
+cd $STAGING
+rm -rf bash-5.1.16
+tar -xvf coreutils.tar.xz
+cd coreutils-9.0
+./configure --prefix=/usr                     \
+            --host=$TARGET_VAR                   \
+            --build=$(build-aux/config.guess) \
+            --enable-install-program=hostname \
+            --enable-no-install-program=kill,uptime
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+mv -v $ROOTFS/usr/bin/chroot $ROOTFS/usr/sbin
+mkdir -pv $ROOTFS/usr/share/man/man8
+mv -v $ROOTFS/usr/share/man/man1/chroot.1 $ROOTFS/usr/share/man/man8/chroot.8
+sed -i 's/"1"/"8"/' $ROOTFS/usr/share/man/man8/chroot.8
+
+cd $STAGING
+rm -rf coreutils-9.0
+tar -xvf diffutils.tar.xz
+cd diffutils-3.8
+./configure --prefix=/usr --host=$TARGET_VAR
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf diffutils-3.8
+tar -xvf file.tar.gz
+cd file-5.41
+mkdir build
+pushd build
+  ../configure --disable-bzlib      \
+               --disable-libseccomp \
+               --disable-xzlib      \
+               --disable-zlib
+  make -j$(nproc)
+popd
+./configure --prefix=/usr --host=$TARGET_VAR --build=$(./config.guess)
+make FILE_COMPILE=$(pwd)/build/src/file -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf file-5.41
+tar -xvf findutils.tar.xz
+cd findutils-4.9.0
+./configure --prefix=/usr                   \
+            --localstatedir=/var/lib/locate \
+            --host=$TARGET_VAR                \
+            --build=$(build-aux/config.guess)
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf findutils-4.9.0
+tar -xvf gawk.tar.xz
+cd gawk-5.1.1
+sed -i 's/extras//' Makefile.in
+./configure --prefix=/usr   \
+            --host=$TARGET_VAR \
+            --build=$(build-aux/config.guess)
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf gawk-5.1.1
+tar -xvf grep.tar.xz
+cd grep-3.7
+./configure --prefix=/usr   \
+            --host=$TARGET_VAR
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+
+cd $STAGING
+rm -rf grep-3.7
+tar -xvf gzip.tar.xz
+cd gzip-1.11
+./configure --prefix=/usr --host=$TARGET_VAR
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf gzip-1.11
+tar -xvf make.tar.gz
+cd make-4.3
+./configure --prefix=/usr   \
+            --without-guile \
+            --host=$TARGET_VAR \
+            --build=$(build-aux/config.guess)
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf make-4.3
+tar -xvf patch.tar.xz
+cd patch-2.7.6
+./configure --prefix=/usr   \
+            --host=$TARGET_VAR \
+            --build=$(build-aux/config.guess)
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf patch-2.7.6
+tar -xvf sed.tar.xz
+cd sed-4.8
+./configure --prefix=/usr   \
+            --host=$TARGET_VAR
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf sed-4.8
+tar -xvf tar.tar.xz
+cd tar-1.34
+./configure --prefix=/usr                     \
+            --host=$TARGET_VAR                   \
+            --build=$(build-aux/config.guess)
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+
+cd $STAGING
+rm -rf tar-1.34
+tar -xvf xz.tar.xz
+cd xz-5.2.5
+./configure --prefix=/usr                     \
+            --host=$TARGET_VAR                  \
+            --build=$(build-aux/config.guess) \
+            --disable-static                  \
+            --docdir=/usr/share/doc/xz-5.2.5
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+
+cd $STAGING
+rm -rf xz-5.2.5
+tar -xvf binutils.tar.xz
+cd binutils-2.38
+sed '6009s/$add_dir//' -i ltmain.sh
+mkdir -v build
+cd build
+../configure                   \
+    --prefix=/usr              \
+    --build=$(../config.guess) \
+    --host=$TARGET_VAR            \
+    --disable-nls              \
+    --enable-shared            \
+    --disable-werror           \
+    --enable-64-bit-bfd
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+
+cd $STAGING
+rm -rf binutils-2.38
+tar -xvf gcc.tar.xz
+cd gcc-11.2.0
+tar -xf ../mpfr.tar.xz
+mv -v mpfr-4.1.0 mpfr
+tar -xf ../gmp.tar.xz
+mv -v gmp-6.2.1 gmp
+tar -xf ../mpc.tar.gz
+mv -v mpc-1.2.1 mpc
+case $(uname -m) in
+  x86_64)
+    sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
+  ;;
+esac
+mkdir -v build
+cd build
+mkdir -pv $TARGET_VAR/libgcc
+ln -s ../../../libgcc/gthr-posix.h $TARGET_VAR/libgcc/gthr-default.h
+../configure                                       \
+    --build=$(../config.guess)                     \
+    --host=$TARGET_VAR                               \
+    --prefix=/usr                                  \
+    CC_FOR_TARGET=$TARGET_VAR-gcc                     \
+    --with-build-sysroot=$ROOTFS                      \
+    --enable-initfini-array                        \
+    --disable-nls                                  \
+    --disable-multilib                             \
+    --disable-decimal-float                        \
+    --disable-libatomic                            \
+    --disable-libgomp                              \
+    --disable-libquadmath                          \
+    --disable-libssp                               \
+    --disable-libvtv                               \
+    --disable-libstdcxx                            \
+    --enable-languages=c,c++
+make -j$(nproc)
+make DESTDIR=$ROOTFS install -j$(nproc)
+ln -sv gcc $ROOTFS/usr/bin/cc
+
+
+set +ex
 
 
 cd $STAGING
@@ -264,7 +481,7 @@ tar -xvf busybox.tar.bz2
 tar -xvf iana-etc.tar.bz2
 #tar -xvf gcc.tar.bz2
 #tar -xvf musl.tar.gz
-
+tar -xvf kernel.tar.xz
 
 
 
@@ -352,6 +569,10 @@ root (hd0,0)
 menuentry "fiordland" {      
     linux  /boot/vmlinuz
     initrd /boot/rootfs.gz
+}
+
+menuentry "memtest" {
+  linux16 /boot/memtest
 }
 EOF
 
