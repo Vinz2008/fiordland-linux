@@ -47,14 +47,21 @@ mkdir -pv $ROOTFS/usr/share/udhcpc
 chmod +x $ROOTFS/usr/share/udhcpc/default.script
 ln -sv $ROOTFS/proc/self/mounts $ROOTFS/etc/mtab
 mknod -m 600 $ROOTFS/dev/console c 5 1
+ln -s $ROOTFS/dev/ttyS0 $ROOTFS/dev/console
+mknod -m 666 $ROOTFS/dev/tty c 5 0
 mknod -m 666 $ROOTFS/dev/null c 1 3
 mknod -m 600 $ROOTFS/lib/udev/devices/console c 5 1
 mknod -m 666 $ROOTFS/lib/udev/devices/null c 1 3
+mknod -m 666 $ROOTFS/dev/ttyS0 c 4 64
+mknod -m 666 $ROOTFS/dev/zero c 1 5
+mknod -m 666 $ROOTFS/dev/ptmx c 5 2
+chown root:tty $ROOTFS/dev/{console,ptmx,tty}
 
 
 
 cp -v -r $AIROOTFS/* $ROOTFS 
 
+:'
 # CROSS COMPILATION TOOLS
 cd $STAGING
 
@@ -184,9 +191,9 @@ cd build
     --with-gxx-include-dir=/tools/$TARGET_VAR/include/c++/11.2.0
 make -j$(nproc)
 make DESTDIR=$ROOTFS install -j$(nproc)
-echo 'int main(){}' > dummy.c
+echo "int main(){}" > dummy.c
 $TARGET_VAR-gcc dummy.c
-readelf -l a.out | grep '/ld-linux'
+readelf -l a.out | grep "/ld-linux"
 
 cd $STAGING
 rm -rf gcc-11.2.0
@@ -454,13 +461,13 @@ ln -s ../../../libgcc/gthr-posix.h $TARGET_VAR/libgcc/gthr-default.h
 make -j$(nproc)
 make DESTDIR=$ROOTFS install -j$(nproc)
 ln -sv gcc $ROOTFS/usr/bin/cc
-
+'
 
 set +ex
 
 
 cd $STAGING
-#wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
+wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz
 #wget -nc -O binutils.tar.bz2 http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.bz2
 wget -nc -O busybox.tar.bz2 http://busybox.net/downloads/busybox-${BUSYBOX_VERSION}.tar.bz2
 wget -nc -O iana-etc.tar.bz2 http://sethwklein.net/iana-etc-${IANA_ETC_VERSION}.tar.bz2

@@ -1,12 +1,15 @@
-#!/bin/busybox sh
+#!/bin/sh
 
-PATH="/bin:/usr/bin"
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
 /bin/busybox --install /bin
 
-mount -t proc proc /proc -o nosuid,noexec,nodev
-mount -t sysfs sys /sys -o nosuid,noexec,nodev
-mount -t devtmpfs dev /dev
+#mount -t devtmpfs dev /dev
+mount -n -t tmpfs none /dev
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+
+echo 0 > /proc/sys/kernel/printk
 mkdir /dev/pts
 mkdir /dev/shm
 mkdir -p /proc/sys/kernel/
@@ -42,7 +45,8 @@ rm -rf /tmp/*
 echo -n "Setting up interface lo: "
 ifconfig lo up 127.0.0.1
 busybox --install /bin
-echo 0 > /proc/sys/kernel/printk
 
 echo "Welcome to init ram filesystem :)"
+export PID1_SHELL=true
+exec setsid cttyhack sh
 exec /bin/busybox sh

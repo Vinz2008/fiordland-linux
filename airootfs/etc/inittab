@@ -1,4 +1,7 @@
-::sysinit:/etc/rc.d/startup
+ 
+::sysinit:/etc/init.d/rcS
+
+ttyS0::askfirst:/bin/sh
 
 tty1::respawn:/sbin/getty 38400 tty1
 tty2::respawn:/sbin/getty 38400 tty2
@@ -9,3 +12,4 @@ tty6::respawn:/sbin/getty 38400 tty6
 
 ::shutdown:/etc/rc.d/shutdown
 ::ctrlaltdel:/sbin/reboot
+::restart:/sbin/init
