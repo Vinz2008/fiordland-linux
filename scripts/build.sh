@@ -29,8 +29,10 @@ ISO_DIR=$SOURCE_DIR/iso
 
 export PATH=$PATH:$ROOTFS/tools/bin:$ROOTFS/cross-tools/bin
 
+set -ex
 
-mkdir -p $ROOTFS/{bin,boot,dev,sys,home,mnt,proc,run,tmp,var,etc,sbin,lib/{firmware,modules},lib64/{firmware,modules}} $ROOTFS/usr/{,local/}{bin,include,lib,sbin,share/{color,dict,doc,info,locale,man,misc,terminfo,zoneinfo}} $ROOTFS/var/{cache,lib,local,lock,opt,run,spool,empty,log}
+mkdir -pv $ROOTFS/{bin,boot,dev,sys,home,mnt,proc,run,tmp,etc,sbin}
+mkdir -pv $ROOTFS/lib/{firmware,modules} $ROOTFS/lib64/{firmware,modules} $ROOTFS/usr/{,local/}{bin,include,lib,sbin,share/{color,dict,doc,info,locale,man,misc,terminfo,zoneinfo}} $ROOTFS/var/{cache,lib,local,lock,opt,run,spool,empty,log}
 touch $ROOTFS/var/log/{btmp,lastlog,faillog,wtmp}
 chgrp -v utmp $ROOTFS/var/log/lastlog
 chmod -v 664  $ROOTFS/var/log/lastlog
@@ -56,8 +58,8 @@ mknod -m 666 $ROOTFS/dev/ttyS0 c 4 64
 mknod -m 666 $ROOTFS/dev/zero c 1 5
 mknod -m 666 $ROOTFS/dev/ptmx c 5 2
 chown root:tty $ROOTFS/dev/{console,ptmx,tty}
-
-
+set +ex
+sleep 10
 
 cp -v -r $AIROOTFS/* $ROOTFS 
 
@@ -472,6 +474,7 @@ wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL
 wget -nc -O busybox.tar.bz2 http://busybox.net/downloads/busybox-${BUSYBOX_VERSION}.tar.bz2
 wget -nc -O iana-etc.tar.bz2 http://sethwklein.net/iana-etc-${IANA_ETC_VERSION}.tar.bz2
 wget -nc -O iana-etc-patch.patch  http://patches.clfs.org/embedded-dev/iana-etc-${IANA_ETC_VERSION}-update-2.patch
+wget -nc -O man-pages.tar.xz https://www.kernel.org/pub/linux/docs/man-pages/man-pages-5.13.tar.xz
 git clone https://github.com/memtest86plus/memtest86plus.git memtest86
 #wget -nc -O gcc.tar.bz2  http://gcc.gnu.org/pub/gcc/releases/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.bz2
 #wget -nc -O musl.tar.gz http://www.musl-libc.org/releases/musl-${MUSL_VERSION}.tar.gz
@@ -482,7 +485,8 @@ git clone https://github.com/memtest86plus/memtest86plus.git memtest86
 
 
 
-tar -xvf bc.tar.bz2
+#tar -xvf bc.tar.bz2
+tar -xvf man-pages.tar.xz
 tar -xvf busybox.tar.bz2
 #tar -xvf binutils.tar.bz2
 tar -xvf iana-etc.tar.bz2
@@ -494,7 +498,9 @@ tar -xvf kernel.tar.xz
 
 set -ex
 
-
+cd $STAGING
+cd man-pages-5.13
+make prefix=$ISO_DIR/usr install
 
 cd $STAGING
 cd memtest86/build64
