@@ -541,7 +541,6 @@ wget -nc -O libpipeline.tar.gz https://download.savannah.gnu.org/releases/libpip
 wget -nc -O make.tar.gz https://ftp.gnu.org/gnu/make/make-4.3.tar.gz
 wget -nc -O patch.tar.xz https://ftp.gnu.org/gnu/patch/patch-2.7.6.tar.xz
 wget -nc -O tar.tar.xz https://ftp.gnu.org/gnu/tar/tar-1.34.tar.xz
-wget -nc -O texinfo.tar.xz https://ftp.gnu.org/gnu/texinfo/texinfo-6.8.tar.xz
 wget -nc -O vim.tar.gz https://anduin.linuxfromscratch.org/LFS/vim-8.2.4383.tar.gz
 wget -nc -O markupSafe.tar.gz https://files.pythonhosted.org/packages/source/M/MarkupSafe/MarkupSafe-2.0.1.tar.gz
 wget -nc -O jinja2.tar.gz https://files.pythonhosted.org/packages/source/J/Jinja2/Jinja2-3.0.3.tar.gz
@@ -554,9 +553,9 @@ wget -nc -O e2fsprogs.tar.gz https://downloads.sourceforge.net/project/e2fsprogs
 
 
 
-chown -R root:root $ROOTFS/{usr,lib,var,etc,bin,sbin,tools}
+sudo chown -R root:root $ROOTFS/{usr,lib,var,etc,bin,sbin,cross-tools}
 case $(uname -m) in
-  x86_64) chown -R root:root $ROOTFS/lib64 ;;
+  x86_64) sudo chown -R root:root $ROOTFS/lib64 ;;
 esac
 sudo mount -v --bind /dev $ROOTFS/dev
 sudo mount -v --bind /dev/pts $ROOTFS/dev/pts
