@@ -47,6 +47,4 @@ ifconfig lo up 127.0.0.1
 busybox --install /bin
 
 echo "Welcome to init ram filesystem :)"
-export PID1_SHELL=true
-exec setsid cttyhack sh
-exec /bin/busybox sh
+setsid sh -c 'exec sh </dev/ttyS0 2>&1'
