@@ -31,11 +31,23 @@ export PATH=$PATH:$ROOTFS/cross-tools/bin
 
 set -ex
 
-mkdir -p $ROOTFS/{boot,dev,sys,home,mnt,proc,run,tmp,etc,sbin,opt,srv}
-mkdir -p $ROOTFS/lib/{firmware,modules} $ROOTFS/lib64/{firmware,modules} $ROOTFS/usr/{,local/}{bin,include,lib,sbin,share/{color,dict,doc,info,locale,man,misc,terminfo,zoneinfo}} $ROOTFS/var/{cache,lib,local,lock,opt,run,spool,empty,log}
+
+
+mkdir -p $ROOTFS/{boot,dev,sys,home,mnt,proc,run,tmp,etc,opt,srv}
+mkdir -p $ROOTFS/usr/{,local/}{bin,include,lib,sbin,share/{color,dict,doc,info,locale,man,misc,terminfo,zoneinfo}} $ROOTFS/var/{cache,lib,local,lock,opt,run,spool,empty,log}
+
+
+case $(uname -m) in
+  x86_64) mkdir -pv $ROOTFS/lib64/{firmware,modules} ;;
+esac
+
+
 
 cd $ROOTFS
-ln -sv bin usr/bin
+for i in bin lib sbin; do
+  ln -sv usr/$i $ROOTFS/$i
+done
+
 cd $SOURCE_DIR
 
 touch $ROOTFS/var/log/{btmp,lastlog,faillog,wtmp}
@@ -519,7 +531,7 @@ wget -nc -O bash.tar.gz https://ftp.gnu.org/gnu/bash/bash-5.1.16.tar.gz
 wget -nc -O libtool.tar.xz https://ftp.gnu.org/gnu/libtool/libtool-2.4.6.tar.xz
 wget -nc -O gdbm.tar.gz https://ftp.gnu.org/gnu/gdbm/gdbm-1.23.tar.gz
 wget -nc -O gperf.tar.gz https://ftp.gnu.org/gnu/gperf/gperf-3.1.tar.gz
-wget -nc -O expat.tar.xz https://prdownloads.sourceforge.net/expat/expat-2.4.6.tar.xz
+wget -nc -O expat.tar.xz https://downloads.sourceforge.net/expat/expat-2.4.6.tar.bz2
 wget -nc -O inetutils.tar.xz https://ftp.gnu.org/gnu/inetutils/inetutils-2.2.tar.xz
 wget -nc -O less.tar.gz https://www.greenwoodsoftware.com/less/less-590.tar.gz
 wget -nc -O XML-Parser.tar.gz https://cpan.metacpan.org/authors/id/T/TO/TODDR/XML-Parser-2.46.tar.gz
@@ -578,7 +590,7 @@ chmod a+x $ROOTFS/chroot.sh
 chroot "$ROOTFS" /usr/bin/env -i HOME=/root TERM=xterm-256color PS1='(lfs chroot) \u:\w\$ ' PATH=/usr/bin:/usr/sbin /usr/bin/bash /chroot.sh
 
 
-sudo umount $ROOTFS/dev $ROOTFS/dev/pts ROOTFS/proc $ROOTFS/sys $ROOTFS/run
+sudo umount $ROOTFS/dev $ROOTFS/dev/pts $ROOTFS/proc $ROOTFS/sys $ROOTFS/run
 rm $ROOTFS/chroot.sh
 
 

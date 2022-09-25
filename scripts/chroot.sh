@@ -32,6 +32,8 @@ chgrp -v utmp /var/log/lastlog
 chmod -v 664  /var/log/lastlog
 chmod -v 600  /var/log/btmp
 
+cd /packages
+
 tar -xvf gcc.tar.gz
 cd gcc-11.2.0
 ln -s gthr-posix.h libgcc/gthr-default.h
