@@ -303,7 +303,7 @@ cd ..
 rm -rf flex-2.6.4
 
 tar -xvf tcl.tar.gz
-cd tcl8.6.12-src
+cd tcl8.6.12
 SRCDIR=$(pwd)
 cd unix
 ./configure --prefix=/usr           \

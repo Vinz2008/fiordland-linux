@@ -590,7 +590,7 @@ chmod a+x $ROOTFS/chroot.sh
 chroot "$ROOTFS" /usr/bin/env -i HOME=/root TERM=xterm-256color PS1='(lfs chroot) \u:\w\$ ' PATH=/usr/bin:/usr/sbin /usr/bin/bash /chroot.sh
 
 
-sudo umount $ROOTFS/dev $ROOTFS/dev/pts $ROOTFS/proc $ROOTFS/sys $ROOTFS/run
+sudo umount -l $ROOTFS/dev $ROOTFS/dev/pts $ROOTFS/proc $ROOTFS/sys $ROOTFS/run
 rm $ROOTFS/chroot.sh
 
 
@@ -602,7 +602,7 @@ set +ex
 cd $STAGING
 #wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz
 #wget -nc -O binutils.tar.bz2 http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.bz2
-wget -nc -O busybox.tar.bz2 http://busybox.net/downloads/busybox-${BUSYBOX_VERSION}.tar.bz2
+#wget -nc -O busybox.tar.bz2 http://busybox.net/downloads/busybox-${BUSYBOX_VERSION}.tar.bz2
 git clone https://github.com/memtest86plus/memtest86plus.git memtest86
 #wget -nc -O gcc.tar.bz2  http://gcc.gnu.org/pub/gcc/releases/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.bz2
 #wget -nc -O musl.tar.gz http://www.musl-libc.org/releases/musl-${MUSL_VERSION}.tar.gz
@@ -614,7 +614,7 @@ git clone https://github.com/memtest86plus/memtest86plus.git memtest86
 
 
 #tar -xvf bc.tar.bz2
-tar -xvf busybox.tar.bz2
+#tar -xvf busybox.tar.bz2
 #tar -xvf binutils.tar.bz2
 #tar -xvf gcc.tar.bz2
 #tar -xvf musl.tar.gz
@@ -630,6 +630,7 @@ cd memtest86/build64
 make -j$(nproc)
 cp memtest.bin $ISO_DIR/boot/memtest
 
+:'
 cd $STAGING
 cd busybox-${BUSYBOX_VERSION}
 make distclean
@@ -646,7 +647,7 @@ make CONFIG_PREFIX="${ROOTFS}" install -j$(nproc)
 #cp -r ./ $ROOTFS/
 cd $ROOTFS
 rm -f linuxrc
-
+'
 
 cd $ROOTFS
 mkdir -p dev mnt proc sys tmp
@@ -661,7 +662,7 @@ mkdir -p dev mnt proc sys tmp
 cp $SOURCE_DIR/misc-files/init .
 chmod u+x init
 #cp -f $STAGING/busybox-${BUSYBOX_VERSION}/busybox bin/busybox
-ln -sf busybox bin/sh 2> /dev/null
+#ln -sf busybox bin/sh 2> /dev/null
 echo "Creating initramfs cpio archive"
 find . -print0 | cpio --null -ov --format=newc | gzip --best > $SOURCE_DIR/iso/boot/rootfs.gz
 #cd $ROOTFS
