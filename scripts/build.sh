@@ -590,7 +590,7 @@ chmod a+x $ROOTFS/chroot.sh
 chroot "$ROOTFS" /usr/bin/env -i HOME=/root TERM=xterm-256color PS1='(lfs chroot) \u:\w\$ ' PATH=/usr/bin:/usr/sbin /usr/bin/bash /chroot.sh
 
 
-sudo umount -l $ROOTFS/dev $ROOTFS/dev/pts $ROOTFS/proc $ROOTFS/sys $ROOTFS/run
+sudo umount -l $ROOTFS/dev/pts $ROOTFS/dev $ROOTFS/proc $ROOTFS/sys $ROOTFS/run
 rm $ROOTFS/chroot.sh
 
 
