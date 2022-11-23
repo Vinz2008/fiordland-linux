@@ -35,7 +35,7 @@ chmod -v 600  /var/log/btmp
 cd /packages
 
 tar -xvf gcc.tar.gz
-cd gcc-11.2.0
+cd gcc-12.2.0
 ln -s gthr-posix.h libgcc/gthr-default.h
 mkdir -v build
 cd build
@@ -49,7 +49,7 @@ cd build
 make -j$(nproc)
 make -j$(nproc) install
 cd ../..
-rm -rf gcc-11.2.0
+rm -rf gcc-12.2.0
 
 tar -xvf gettext.tar.xz
 cd gettext-0.21
@@ -461,7 +461,7 @@ pwconv
 grpconv
 mkdir -p /etc/default
 useradd -D --gid 999
-echo "root\nroot\n" | passwd root
+echo "\nroot\nroot\n" | passwd root
 cd ..
 rm -rf shadow-4.11.1
 
@@ -873,5 +873,263 @@ make install -j$(nproc)
 mv -v /etc/bash_completion.d/grub /usr/share/bash-completion/completions
 cd ..
 rm -rf grub-2.06
+
+tar -xvf gzip.tar.xz
+cd gzip-1.11
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf gzip-1.11
+
+tar -xvf iproute2.tar.xz
+cd iproute2-5.16.0
+sed -i /ARPD/d Makefile
+rm -fv man/man8/arpd.8
+make NETNS_RUN_DIR=/run/netns -j$(nproc)
+make SBINDIR=/usr/sbin install -j$(nproc)
+cd ..
+rm -rf iproute2-5.16.0
+
+tar -xvf kbd.tar.xz
+cd kbd-2.4.0
+sed -i '/RESIZECONS_PROGS=/s/yes/no/' configure
+sed -i 's/resizecons.8 //' docs/man/man8/Makefile.in
+./configure --prefix=/usr --disable-vlock
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf kbd-2.4.0
+
+tar -xvf libpipeline.tar.gz
+cd libpipeline-1.5.5
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf libpipeline-1.5.5
+
+tar -xvf make.tar.gz
+cd make-4.3
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf make-4.3
+
+tar -xvf patch.tar.xz
+cd patch-2.7.6
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf patch-2.7.6
+
+tar -xvf tar.tar.xz
+cd tar-1.34
+FORCE_UNSAFE_CONFIGURE=1  \
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf tar-1.34
+
+tar -xvf texinfo.tar.xz
+cd texinfo-6.8
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+pushd /usr/share/info
+  rm -v dir
+  for f in *
+    do install-info $f dir 2>/dev/null
+  done
+popd
+cd ..
+rm -rf texinfo-6.8
+
+tar -xvf vim.tar.gz
+cd vim-8.2.4383
+echo '#define SYS_VIMRC_FILE "/etc/vimrc"' >> src/feature.h
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+ln -sv vim /usr/bin/vi
+for L in  /usr/share/man/{,*/}man1/vim.1; do
+    ln -sv vim.1 $(dirname $L)/vi.1
+done
+ln -sv ../vim/vim90/doc /usr/share/doc/vim-9.0.0228
+cat > /etc/vimrc << "EOF"
+" Begin /etc/vimrc
+
+" Ensure defaults are set before customizing settings, not after
+source $VIMRUNTIME/defaults.vim
+let skip_defaults_vim=1
+
+set nocompatible
+set backspace=2
+set mouse=
+syntax on
+if (&term == "xterm") || (&term == "putty")
+  set background=dark
+endif
+
+" End /etc/vimrc
+EOF
+cd ..
+rm -rf vim-8.2.4383
+
+tar -xvf markupSafe.tar.gz
+cd MarkupSafe-2.0.1
+pip3 wheel -w dist --no-build-isolation --no-deps $PWD
+pip3 install --no-index --no-user --find-links dist Markupsafe
+cd ..
+rm -rf MarkupSafe-2.0.1
+
+tar -xvf jinja2.tar.gz
+cd Jinja2-3.0.3
+pip3 wheel -w dist --no-build-isolation --no-deps $PWD
+pip3 install --no-index --no-user --find-links dist Jinja2
+cd ..
+rm -rf Jinja2-3.0.3
+
+tar -xvf systemd.tar.gz
+cd systemd-250
+patch -Np1 -i ../systemd-251-glibc_2.36_fix-1.patch
+sed -i -e 's/GROUP="render"/GROUP="video"/' \
+       -e 's/GROUP="sgx", //' rules.d/50-udev-default.rules.in
+mkdir -p build
+cd       build
+
+meson --prefix=/usr                 \
+      --buildtype=release           \
+      -Ddefault-dnssec=no           \
+      -Dfirstboot=false             \
+      -Dinstall-tests=false         \
+      -Dldconfig=false              \
+      -Dsysusers=false              \
+      -Drpmmacrosdir=no             \
+      -Dhomed=false                 \
+      -Duserdb=false                \
+      -Dman=false                   \
+      -Dmode=release                \
+      -Dpamconfdir=no               \
+      -Ddocdir=/usr/share/doc/systemd-251 \
+      ..
+ninja
+ninja install
+systemd-machine-id-setup
+systemctl preset-all
+systemctl disable systemd-sysupdate
+cd ../..
+rm -rf systemd-250
+
+tar -xvf dbus.tar.gz
+cd dbus-1.12.20
+./configure --prefix=/usr                        \
+            --sysconfdir=/etc                    \
+            --localstatedir=/var                 \
+            --runstatedir=/run                   \
+            --disable-static                     \
+            --disable-doxygen-docs               \
+            --disable-xml-docs                   \
+            --docdir=/usr/share/doc/dbus-1.14.0 \
+            --with-system-socket=/run/dbus/system_bus_socket
+make -j$(nproc)
+make install -j$(nproc)
+ln -sfv /etc/machine-id /var/lib/dbus
+cd ..
+rm -rf dbus-1.12.20
+
+tar -xvf man-db.tar.xz
+cd man-db-2.10.1
+./configure --prefix=/usr                         \
+            --docdir=/usr/share/doc/man-db-2.10.2 \
+            --sysconfdir=/etc                     \
+            --disable-setuid                      \
+            --enable-cache-owner=bin              \
+            --with-browser=/usr/bin/lynx          \
+            --with-vgrind=/usr/bin/vgrind         \
+            --with-grap=/usr/bin/grap
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf man-db-2.10.1
+
+tar -xvf procps-ng.tar.xz
+cd procps-ng-3.3.17
+./configure --prefix=/usr                            \
+            --docdir=/usr/share/doc/procps-ng-4.0.0 \
+            --disable-static                         \
+            --disable-kill                           \
+            --with-systemd
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf procps-ng-3.3.17
+
+tar -xvf util-linux.tar.xz
+cd util-linux-2.37.4
+./configure ADJTIME_PATH=/var/lib/hwclock/adjtime   \
+            --bindir=/usr/bin    \
+            --libdir=/usr/lib    \
+            --sbindir=/usr/sbin  \
+            --docdir=/usr/share/doc/util-linux-2.38.1 \
+            --disable-chfn-chsh  \
+            --disable-login      \
+            --disable-nologin    \
+            --disable-su         \
+            --disable-setpriv    \
+            --disable-runuser    \
+            --disable-pylibmount \
+            --disable-static     \
+            --without-python
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf util-linux-2.37.4
+
+tar -xvf e2fsprogs.tar.gz
+cd e2fsprogs-1.46.5
+mkdir -v build
+cd       build
+../configure --prefix=/usr           \
+             --sysconfdir=/etc       \
+             --enable-elf-shlibs     \
+             --disable-libblkid      \
+             --disable-libuuid       \
+             --disable-uuidd         \
+             --disable-fsck
+make -j$(nproc)
+make install -j$(nproc)
+rm -fv /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
+gunzip -v /usr/share/info/libext2fs.info.gz
+install-info --dir-file=/usr/share/info/dir /usr/share/info/libext2fs.info
+cd ../..
+rm -rf e2fsprogs-1.46.5
+
+tar -xvf linux.tar.xz
+cd linux-5.19.2
+make mrproper
+make defconfig
+make -j$(nproc)
+make modules_install -j$(nproc)
+cp -iv arch/x86/boot/bzImage /boot/vmlinuz-5.19.2-lfs-11.2-systemd
+cp -iv System.map /boot/System.map-5.19.2
+cp -iv .config /boot/config-5.19.2
+install -v -m755 -d /etc/modprobe.d
+cat > /etc/modprobe.d/usb.conf << "EOF"
+# Begin /etc/modprobe.d/usb.conf
+
+install ohci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i ohci_hcd ; true
+install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
+
+# End /etc/modprobe.d/usb.conf
+EOF
+cd ..
+rm -rf linux-5.19.2
+
+rm -rf /tmp/*
+find /usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf
 
 set -ex

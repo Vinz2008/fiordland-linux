@@ -14,9 +14,9 @@ CC=gcc
 
 mkdir -p rootfs
 mkdir -p staging
-mkdir -p iso/boot
-mkdir -p iso/efi/boot
-mkdir -p iso/boot/grub/i386-pc
+mkdir -p rootfs/boot
+mkdir -p rootfs/efi/boot
+mkdir -p rootfs/boot/grub/i386-pc
 mkdir -p rootfs/cross-tools
 
 
@@ -25,7 +25,6 @@ SOURCE_DIR=$PWD
 AIROOTFS=$SOURCE_DIR/airootfs
 ROOTFS=$SOURCE_DIR/rootfs
 STAGING=$SOURCE_DIR/staging
-ISO_DIR=$SOURCE_DIR/iso
 
 export PATH=$PATH:$ROOTFS/cross-tools/bin
 
@@ -555,6 +554,7 @@ wget -nc -O grub.tar.xz https://ftp.gnu.org/gnu/grub/grub-2.06.tar.xz
 wget -nc -O gzip.tar.xz https://ftp.gnu.org/gnu/gzip/gzip-1.11.tar.xz
 wget -nc -O iproute2.tar.xz https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.16.0.tar.xz
 wget -nc -O kbd.tar.xz https://www.kernel.org/pub/linux/utils/kbd/kbd-2.4.0.tar.xz
+wget -nc https://www.linuxfromscratch.org/patches/lfs/11.2/kbd-2.5.1-backspace-1.patch
 wget -nc -O libpipeline.tar.gz https://download.savannah.gnu.org/releases/libpipeline/libpipeline-1.5.5.tar.gz
 wget -nc -O make.tar.gz https://ftp.gnu.org/gnu/make/make-4.3.tar.gz
 wget -nc -O patch.tar.xz https://ftp.gnu.org/gnu/patch/patch-2.7.6.tar.xz
@@ -563,11 +563,12 @@ wget -nc -O vim.tar.gz https://anduin.linuxfromscratch.org/LFS/vim-8.2.4383.tar.
 wget -nc -O markupSafe.tar.gz https://files.pythonhosted.org/packages/source/M/MarkupSafe/MarkupSafe-2.0.1.tar.gz
 wget -nc -O jinja2.tar.gz https://files.pythonhosted.org/packages/source/J/Jinja2/Jinja2-3.0.3.tar.gz
 wget -nc -O systemd.tar.gz https://github.com/systemd/systemd/archive/v250/systemd-250.tar.gz
+wget -nc https://www.linuxfromscratch.org/patches/lfs/11.2/systemd-251-glibc_2.36_fix-1.patch
 wget -nc -O dbus.tar.gz https://dbus.freedesktop.org/releases/dbus/dbus-1.12.20.tar.gz
 wget -nc -O man-db.tar.xz https://download.savannah.gnu.org/releases/man-db/man-db-2.10.1.tar.xz
 wget -nc -O procps-ng.tar.xz https://sourceforge.net/projects/procps-ng/files/Production/procps-ng-3.3.17.tar.xz
 wget -nc -O e2fsprogs.tar.gz https://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v1.46.5/e2fsprogs-1.46.5.tar.gz
-
+wget -nc -O linux.tar.xz https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.19.2.tar.xz
 
 sudo chown -R root:root $ROOTFS/{usr,lib,var,etc,bin,sbin,cross-tools}
 case $(uname -m) in
@@ -627,61 +628,14 @@ set -ex
 cd $STAGING
 cd memtest86/build64
 make -j$(nproc)
-cp memtest.bin $ISO_DIR/boot/memtest
-
-:'
-cd $STAGING
-cd busybox-${BUSYBOX_VERSION}
-make distclean
-make defconfig
-#sed -i "s|.*CONFIG_STATIC.*|CONFIG_STATIC=y|" .config
-echo "CONFIG_STATIC_LIBGCC=y" >> .config
-make  -j$(nproc)
-make CONFIG_PREFIX="${ROOTFS}" install -j$(nproc)
+cp memtest.bin $ROOTFS/boot/memtest
 
 
 
-#make busybox install -j$(nproc)
-#cd _install
-#cp -r ./ $ROOTFS/
-cd $ROOTFS
-rm -f linuxrc
-'
-
-cd $ROOTFS
-mkdir -p dev mnt proc sys tmp
-
-#cp $SOURCE_DIR/misc-files/init $ROOTFS/boot/initrd
-#chmod +x $ROOTFS/boot/initrd
 
 
-
-#mkdir $SOURCE_DIR/INITRAMFS_BUILD
-#cd $SOURCE_DIR/INITRAMFS_BUILD
-cp $SOURCE_DIR/misc-files/init .
-chmod u+x init
-#cp -f $STAGING/busybox-${BUSYBOX_VERSION}/busybox bin/busybox
-#ln -sf busybox bin/sh 2> /dev/null
-echo "Creating initramfs cpio archive"
-find . -print0 | cpio --null -ov --format=newc | gzip --best > $SOURCE_DIR/iso/boot/rootfs.gz
-#cd $ROOTFS
-#find . | cpio --null -ov --format=newc | gzip --best > $SOURCE_DIR/iso/boot/rootfs.gz
-
-cd $STAGING
-cd linux-${KERNEL_VERSION}
-make mrproper
-make x86_64_defconfig
-#make ${ARCH_VAR}_defconfig
-#make -j$(nproc) defconfig
-make -j$(nproc)
-grep -q '^CONFIG_MODULES=y$' .config && make modules -j$(nproc) && make INSTALL_MOD_PATH=$ROOTFS/usr INSTALL_MOD_STRIP=1 modules_install
-
-make INSTALL_HDR_PATH=$ROOTFS/usr INSTALL_MOD_STRIP=1 headers_install
-
-cp System.map $SOURCE_DIR/iso/boot/System.map
-cp -f "arch/x86/boot/"*Image "$SOURCE_DIR/iso/boot/vmlinuz"
-
-cd $SOURCE_DIR/iso/boot
+#cd $SOURCE_DIR/iso/boot
+cd $ROOTFS/boot/
 mkdir -p grub
 cd grub
 cat > grub.cfg << EOF
@@ -692,8 +646,7 @@ set menu_color_normal=white/black
 set menu_color_highlight=white/green
 root (hd0,0)
 menuentry "fiordland" {      
-    linux  /boot/vmlinuz
-    initrd /boot/rootfs.gz
+    linux   /boot/vmlinuz-5.19.2-lfs-11.2-systemd ro
 }
 
 menuentry "memtest" {
@@ -702,7 +655,7 @@ menuentry "memtest" {
 EOF
 
 cd $SOURCE_DIR
-grub-mkrescue --compress=xz -o fiordland.iso iso 
+grub-mkrescue --compress=xz -o fiordland.iso rootfs
 #grub-mkimage -d iso/boot/grub/i386-pc -o iso/boot/grub/i386-pc/core-img -O i386-pc -p iso/boot/grub biosdisk iso9660
 #cat iso/boot/grub/i386-pc/cdboot.img iso/boot/grub/i386-pc/core.img > iso/boot/grub/i386-pc/eltorito.img
 #grub-mkimage -O x86_64-efi -p iso/boot/grub -o iso/efi/boot/bootx64.efi iso9660
