@@ -45,7 +45,7 @@ esac
 
 cd $ROOTFS
 for i in bin lib sbin; do
-  ln -sv usr/$i $ROOTFS/$i
+  ln -svf usr/$i $ROOTFS/$i
 done
 
 cd $SOURCE_DIR
@@ -55,15 +55,15 @@ touch $ROOTFS/var/log/{btmp,lastlog,faillog,wtmp}
 chmod -v 664  $ROOTFS/var/log/lastlog
 chmod -v 600  $ROOTFS/var/log/btmp
 mkdir -p $ROOTFS/media/{floppy,cdrom}
-ln -sfv $ROOTFS/run $ROOTFS/var/run
-ln -sfv $ROOTFS/run/lock $ROOTFS/var/lock
+ln -sfvf $ROOTFS/run $ROOTFS/var/run
+ln -sfvf $ROOTFS/run/lock $ROOTFS/var/lock
 install -dv -m 0750 $ROOTFS/root
 install -dv -m 1777 $ROOTFS/{var/,}tmp
 touch $ROOTFS/var/log/lastlog
 chmod -v 664 $ROOTFS/var/log/lastlog
 mkdir -pv $ROOTFS/etc/network/if-{post-{up,down},pre-{up,down},up,down}.d
 mkdir -pv $ROOTFS/usr/share/udhcpc
-ln -sv $ROOTFS/proc/self/mounts $ROOTFS/etc/mtab
+ln -svf $ROOTFS/proc/self/mounts $ROOTFS/etc/mtab
 sudo mknod -m 600 $ROOTFS/dev/console c 5 1
 #ln -s $ROOTFS/dev/ttyS0 $ROOTFS/dev/console
 sudo mknod -m 666 $ROOTFS/dev/tty c 5 0
@@ -86,7 +86,7 @@ wget -nc -O gcc.tar.xz https://ftp.gnu.org/gnu/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
 wget -nc -O mpfr.tar.xz https://www.mpfr.org/mpfr-4.1.0/mpfr-4.1.0.tar.xz
 wget -nc -O gmp.tar.xz https://ftp.gnu.org/gnu/gmp/gmp-6.2.1.tar.xz
 wget -nc -O mpc.tar.gz https://ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz
-wget -nc -O linux.tar.xz https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.16.9.tar.xz
+wget -nc -O linux.tar.xz https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.19.2.tar.xz
 wget -nc -O glibc.tar.xz https://ftp.gnu.org/gnu/glibc/glibc-2.35.tar.xz
 wget -nc https://www.linuxfromscratch.org/patches/lfs/11.1/glibc-2.35-fhs-1.patch
 
@@ -157,11 +157,10 @@ cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
 cd $STAGING
 rm -rf gcc-11.2.0
 tar -xvf linux.tar.xz
-cd linux-5.16.9
+cd linux-5.19.2
 make mrproper
 make headers
-find usr/include -name '.*' -delete
-rm usr/include/Makefile
+find usr/include -type f ! -name '*.h' -delete
 cp -rv usr/include $ROOTFS/usr
 
 cd $STAGING
@@ -488,7 +487,7 @@ cd $SOURCE_DIR
 mkdir $ROOTFS/packages
 cd $ROOTFS/packages
 
-wget -nc -O gcc.tar.gz https://ftp.gnu.org/gnu/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
+wget -nc -O gcc.tar.gz https://ftp.gnu.org/gnu/gcc/gcc-12.2.0/gcc-12.2.0.tar.xz
 wget -nc -O gettext.tar.xz https://ftp.gnu.org/gnu/gettext/gettext-0.21.tar.xz
 wget -nc -O bison.tar.xz https://ftp.gnu.org/gnu/bison/bison-3.8.2.tar.xz
 wget -nc -O perl.tar.xz https://www.cpan.org/src/5.0/perl-5.34.0.tar.xz
@@ -500,7 +499,7 @@ wget -nc -O man-pages.tar.xz https://www.kernel.org/pub/linux/docs/man-pages/man
 wget -nc -O iana-etc.tar.gz https://github.com/Mic92/iana-etc/releases/download/20220207/iana-etc-20220207.tar.gz
 wget -nc -O glibc.tar.xz https://ftp.gnu.org/gnu/glibc/glibc-2.35.tar.xz
 wget -nc https://www.linuxfromscratch.org/patches/lfs/11.1/glibc-2.35-fhs-1.patch
-wget -nc -O zlib.tar.xz https://zlib.net/zlib-1.2.12.tar.gz
+wget -nc -O zlib.tar.xz https://zlib.net/zlib-1.2.13.tar.gz
 wget -nc -O bzip2.tar.gz https://www.sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
 wget -nc https://www.linuxfromscratch.org/patches/lfs/11.1/bzip2-1.0.8-install_docs-1.patch
 wget -nc -O xz.tar.xz https://tukaani.org/xz/xz-5.2.5.tar.xz
@@ -531,7 +530,7 @@ wget -nc -O bash.tar.gz https://ftp.gnu.org/gnu/bash/bash-5.1.16.tar.gz
 wget -nc -O libtool.tar.xz https://ftp.gnu.org/gnu/libtool/libtool-2.4.6.tar.xz
 wget -nc -O gdbm.tar.gz https://ftp.gnu.org/gnu/gdbm/gdbm-1.23.tar.gz
 wget -nc -O gperf.tar.gz https://ftp.gnu.org/gnu/gperf/gperf-3.1.tar.gz
-wget -nc -O expat.tar.xz https://downloads.sourceforge.net/expat/expat-2.4.6.tar.bz2
+wget -nc -O expat.tar.xz https://downloads.sourceforge.net/expat/expat-2.5.0.tar.bz2
 wget -nc -O inetutils.tar.xz https://ftp.gnu.org/gnu/inetutils/inetutils-2.2.tar.xz
 wget -nc -O less.tar.gz https://www.greenwoodsoftware.com/less/less-590.tar.gz
 wget -nc -O XML-Parser.tar.gz https://cpan.metacpan.org/authors/id/T/TO/TODDR/XML-Parser-2.46.tar.gz
@@ -542,9 +541,11 @@ wget -nc -O openssl.tar.gz https://www.openssl.org/source/openssl-3.0.1.tar.gz
 wget -nc -O kmod.tar.xz https://www.kernel.org/pub/linux/utils/kernel/kmod/kmod-29.tar.xz
 wget -nc -O elfutils.tar.bz2 https://sourceware.org/ftp/elfutils/0.186/elfutils-0.186.tar.bz2
 wget -nc -O libffi.tar.gz https://github.com/libffi/libffi/releases/download/v3.4.2/libffi-3.4.2.tar.gz
+wget -nc -O wheel.tar.gz https://anduin.linuxfromscratch.org/LFS/wheel-0.37.1.tar.gz
 wget -nc -O ninja.tar.gz https://github.com/ninja-build/ninja/archive/v1.10.2/ninja-1.10.2.tar.gz
 wget -nc -O meson.tar.gz https://github.com/mesonbuild/meson/releases/download/0.61.1/meson-0.61.1.tar.gz
 wget -nc -O coreutils.tar.xz https://ftp.gnu.org/gnu/coreutils/coreutils-9.0.tar.xz
+wget -nc https://www.linuxfromscratch.org/patches/lfs/11.2/coreutils-9.1-i18n-1.patch
 wget -nc -O check.tar.gz https://github.com/libcheck/check/releases/download/0.15.2/check-0.15.2.tar.gz
 wget -nc -O diffutils.tar.xz https://ftp.gnu.org/gnu/diffutils/diffutils-3.8.tar.xz
 wget -nc -O gawk.tar.xz https://ftp.gnu.org/gnu/gawk/gawk-5.1.1.tar.xz
@@ -568,8 +569,6 @@ wget -nc -O procps-ng.tar.xz https://sourceforge.net/projects/procps-ng/files/Pr
 wget -nc -O e2fsprogs.tar.gz https://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v1.46.5/e2fsprogs-1.46.5.tar.gz
 
 
-
-
 sudo chown -R root:root $ROOTFS/{usr,lib,var,etc,bin,sbin,cross-tools}
 case $(uname -m) in
   x86_64) sudo chown -R root:root $ROOTFS/lib64 ;;
@@ -587,7 +586,7 @@ sudo mount -vt tmpfs tmpfs $ROOTFS/run
 
 cp $SOURCE_DIR/scripts/chroot.sh $ROOTFS/
 chmod a+x $ROOTFS/chroot.sh
-chroot "$ROOTFS" /usr/bin/env -i HOME=/root TERM=xterm-256color PS1='(lfs chroot) \u:\w\$ ' PATH=/usr/bin:/usr/sbin /usr/bin/bash /chroot.sh
+sudo chroot "$ROOTFS" /usr/bin/env -i HOME=/root TERM=xterm-256color PS1='(lfs chroot) \u:\w\$ ' PATH=/usr/bin:/usr/sbin /usr/bin/bash /chroot.sh
 
 
 sudo umount -l $ROOTFS/dev/pts $ROOTFS/dev $ROOTFS/proc $ROOTFS/sys $ROOTFS/run

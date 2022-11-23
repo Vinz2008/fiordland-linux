@@ -207,13 +207,13 @@ cd ../..
 rm -rf glibc-2.35
 
 tar -xvf zlib.tar.xz
-cd zlib-1.2.12
+cd zlib-1.2.13
 ./configure --prefix=/usr
 make -j$(nproc)
 make install -j$(nproc)
 rm -fv /usr/lib/libz.a
 cd ..
-rm -rf zlib-1.2.12
+rm -rf zlib-1.2.13
 
 tar -xvf bzip2.tar.gz
 cd bzip2-1.0.8
@@ -354,7 +354,7 @@ mkdir -v build
 cd build
 ../configure --prefix=/usr
 make install -j$(nproc)
-cd ..
+cd ../..
 rm -rf dejagnu-1.6.3
 
 tar -xvf binutils.tar.xz
@@ -377,5 +377,501 @@ make tooldir=/usr install -j$(nproc)
 rm -fv /usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes}.a
 cd ..
 rm -rf binutils-2.38
+
+tar -xvf gmp.tar.xz
+cd gmp-6.2.1
+cp -v configfsf.guess config.guess
+cp -v configfsf.sub   config.sub
+./configure --prefix=/usr    \
+            --enable-cxx     \
+            --disable-static \
+            --docdir=/usr/share/doc/gmp-6.2.1
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf gmp-6.2.1
+
+tar -xvf mpfr.tar.xz
+cd mpfr-4.1.0
+./configure --prefix=/usr        \
+            --disable-static     \
+            --enable-thread-safe \
+            --docdir=/usr/share/doc/mpfr-4.1.0
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf mpfr-4.1.0
+
+tar -xvf mpc.tar.gz
+cd mpc-1.2.1
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/mpc-1.2.1
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf mpc-1.2.1
+
+tar -xvf attr.tar.gz
+cd attr-2.5.1
+./configure --prefix=/usr     \
+            --disable-static  \
+            --sysconfdir=/etc \
+            --docdir=/usr/share/doc/attr-2.5.1
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf attr-2.5.1
+
+tar -xvf acl.tar.xz
+cd acl-2.3.1
+./configure --prefix=/usr         \
+            --disable-static      \
+            --docdir=/usr/share/doc/acl-2.3.1
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf acl-2.3.1
+
+tar -xvf libcap.tar.xz
+cd libcap-2.63
+sed -i '/install -m.*STA/d' libcap/Makefile
+make prefix=/usr lib=lib -j$(nproc)
+make prefix=/usr lib=lib install -j$(nproc)
+cd ..
+rm -rf libcap-2.63
+
+tar -xvf shadow.tar.xz
+cd shadow-4.11.1
+sed -i 's/groups$(EXEEXT) //' src/Makefile.in
+find man -name Makefile.in -exec sed -i 's/groups\.1 / /'   {} \;
+find man -name Makefile.in -exec sed -i 's/getspnam\.3 / /' {} \;
+find man -name Makefile.in -exec sed -i 's/passwd\.5 / /'   {} \;
+sed -e 's:#ENCRYPT_METHOD DES:ENCRYPT_METHOD SHA512:' \
+    -e 's:/var/spool/mail:/var/mail:'                 \
+    -e '/PATH=/{s@/sbin:@@;s@/bin:@@}'                \
+    -i etc/login.defs
+touch /usr/bin/passwd
+./configure --sysconfdir=/etc \
+            --disable-static  \
+            --with-group-name-max-length=32
+make -j$(nproc)
+make exec_prefix=/usr install -j$(nproc)
+pwconv
+grpconv
+mkdir -p /etc/default
+useradd -D --gid 999
+echo "root\nroot\n" | passwd root
+cd ..
+rm -rf shadow-4.11.1
+
+tar -xvf gcc.tar.gz
+cd gcc-12.2.0
+case $(uname -m) in
+  x86_64)
+    sed -e '/m64=/s/lib64/lib/' \
+        -i.orig gcc/config/i386/t-linux64
+  ;;
+esac
+mkdir -v build
+cd build
+../configure --prefix=/usr            \
+             LD=ld                    \
+             --enable-languages=c,c++ \
+             --disable-multilib       \
+             --disable-bootstrap      \
+             --with-system-zlib
+make -j$(nproc)
+make install -j$(nproc)
+ln -svr /usr/bin/cpp /usr/lib
+ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/12.2.0/liblto_plugin.so \
+        /usr/lib/bfd-plugins/
+mkdir -pv /usr/share/gdb/auto-load/usr/lib
+mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib
+cd ../..
+rm -rf gcc-12.2.0
+
+tar -xvf pkg-config.tar.gz
+cd pkg-config-0.29.2
+./configure --prefix=/usr              \
+            --with-internal-glib       \
+            --disable-host-tool        \
+            --docdir=/usr/share/doc/pkg-config-0.29.2
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf pkg-config-0.29.2
+
+tar -xvf ncurses.tar.gz
+cd ncurses-6.3
+./configure --prefix=/usr           \
+            --mandir=/usr/share/man \
+            --with-shared           \
+            --without-debug         \
+            --without-normal        \
+            --with-cxx-shared       \
+            --enable-pc-files       \
+            --enable-widec          \
+            --with-pkg-config-libdir=/usr/lib/pkgconfig
+make -j$(nproc)
+make DESTDIR=$PWD/dest install -j$(nproc)
+install -vm755 dest/usr/lib/libncursesw.so.6.3 /usr/lib
+rm -v  dest/usr/lib/libncursesw.so.6.3
+cp -av dest/* /
+for lib in ncurses form panel menu ; do
+    rm -vf                    /usr/lib/lib${lib}.so
+    echo "INPUT(-l${lib}w)" > /usr/lib/lib${lib}.so
+    ln -sfv ${lib}w.pc        /usr/lib/pkgconfig/${lib}.pc
+done
+rm -vf                     /usr/lib/libcursesw.so
+echo "INPUT(-lncursesw)" > /usr/lib/libcursesw.so
+ln -sfv libncurses.so      /usr/lib/libcurses.so
+cd ..
+rm -rf ncurses-6.3
+
+tar -xvf sed.tar.xz
+cd sed-4.8
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf sed-4.8
+
+tar -xvf psmisc.tar.xz
+cd psmisc-23.4
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf psmisc-23.4
+
+tar -xvf gettext.tar.xz
+cd gettext-0.21
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/gettext-0.21
+make -j$(nproc)
+make install -j$(nproc)
+chmod -v 0755 /usr/lib/preloadable_libintl.so
+cd ..
+rm -rf gettext-0.21
+
+tar -xvf bison.tar.xz
+cd bison-3.8.2
+./configure --prefix=/usr --docdir=/usr/share/doc/bison-3.8.2
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf bison-3.8.2
+
+tar -xvf grep.tar.xz
+cd grep-3.7
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf grep-3.7
+
+tar -xvf bash.tar.gz
+cd bash-5.1.16
+./configure --prefix=/usr                      \
+            --docdir=/usr/share/doc/bash-5.1.16 \
+            --without-bash-malloc              \
+            --with-installed-readline
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf bash-5.1.16
+
+tar -xvf libtool.tar.xz
+cd libtool-2.4.6
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+rm -fv /usr/lib/libltdl.a
+cd ..
+rm -rf libtool-2.4.6
+
+tar -xvf gdbm.tar.gz
+cd gdbm-1.23
+./configure --prefix=/usr    \
+            --disable-static \
+            --enable-libgdbm-compat
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf gdbm-1.23
+
+tar -xvf gperf.tar.gz
+cd gperf-3.1
+./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.1
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf gperf-3.1
+
+tar -xvf expat.tar.xz
+cd expat-2.5.0
+./configure --prefix=/usr    \
+            --disable-static \
+            --docdir=/usr/share/doc/expat-2.4.8
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf expat-2.5.0
+
+tar -xvf inetutils.tar.xz
+cd inetutils-2.2
+./configure --prefix=/usr        \
+            --bindir=/usr/bin    \
+            --localstatedir=/var \
+            --disable-logger     \
+            --disable-whois      \
+            --disable-rcp        \
+            --disable-rexec      \
+            --disable-rlogin     \
+            --disable-rsh        \
+            --disable-servers
+make -j$(nproc)
+make install -j$(nproc)
+mv -v /usr/{,s}bin/ifconfig
+cd ..
+rm -rf inetutils-2.2
+
+tar -xvf less.tar.gz
+cd less-590
+./configure --prefix=/usr --sysconfdir=/etc
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf less-590
+
+tar -xvf perl.tar.xz
+cd perl-5.34.0
+export BUILD_ZLIB=False
+export BUILD_BZIP2=0
+sh Configure -des                                         \
+             -Dprefix=/usr                                \
+             -Dvendorprefix=/usr                          \
+             -Dprivlib=/usr/lib/perl5/5.36/core_perl      \
+             -Darchlib=/usr/lib/perl5/5.36/core_perl      \
+             -Dsitelib=/usr/lib/perl5/5.36/site_perl      \
+             -Dsitearch=/usr/lib/perl5/5.36/site_perl     \
+             -Dvendorlib=/usr/lib/perl5/5.36/vendor_perl  \
+             -Dvendorarch=/usr/lib/perl5/5.36/vendor_perl \
+             -Dman1dir=/usr/share/man/man1                \
+             -Dman3dir=/usr/share/man/man3                \
+             -Dpager="/usr/bin/less -isR"                 \
+             -Duseshrplib                                 \
+             -Dusethreads
+make -j$(nproc)
+make install -j$(nproc)
+unset BUILD_ZLIB BUILD_BZIP2
+cd ..
+rm -rf perl-5.34.0
+
+tar -xvf XML-Parser.tar.gz
+cd XML-Parser-2.46
+perl Makefile.PL
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf XML-Parser-2.46
+
+tar -xvf intltool.tar.gz
+cd intltool-0.51.0
+sed -i 's:\\\${:\\\$\\{:' intltool-update.in
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf intltool-0.51.0
+
+tar -xvf autoconf.tar.xz
+cd autoconf-2.71
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf autoconf-2.71
+
+tar -xvf automake.tar.xz
+cd automake-1.16.5
+./configure --prefix=/usr --docdir=/usr/share/doc/automake-1.16.5
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf automake-1.16.5
+
+tar -xvf openssl.tar.gz
+cd openssl-3.0.1
+./config --prefix=/usr         \
+         --openssldir=/etc/ssl \
+         --libdir=lib          \
+         shared                \
+         zlib-dynamic
+make -j$(nproc)
+sed -i '/INSTALL_LIBS/s/libcrypto.a libssl.a//' Makefile
+make MANSUFFIX=ssl install -j$(nproc)
+mv -v /usr/share/doc/openssl /usr/share/doc/openssl-3.0.5
+cd ..
+rm -rf openssl-3.0.1
+
+tar -xvf kmod.tar.xz
+cd kmod-29
+./configure --prefix=/usr          \
+            --sysconfdir=/etc      \
+            --with-openssl         \
+            --with-xz              \
+            --with-zstd            \
+            --with-zlib
+make -j$(nproc)
+make install -j$(nproc)
+for target in depmod insmod modinfo modprobe rmmod; do
+  ln -sfv ../bin/kmod /usr/sbin/$target
+done
+ln -sfv kmod /usr/bin/lsmod
+cd ..
+rm -rf kmod-29
+
+tar -xvf elfutils.tar.bz2
+cd elfutils-0.186
+./configure --prefix=/usr                \
+            --disable-debuginfod         \
+            --enable-libdebuginfod=dummy
+make -j$(nproc)
+make -C libelf install -j$(nproc)
+install -vm644 config/libelf.pc /usr/lib/pkgconfig
+rm /usr/lib/libelf.a
+cd ..
+rm -rf elfutils-0.186
+
+tar -xvf libffi.tar.gz
+cd libffi-3.4.2
+./configure --prefix=/usr          \
+            --disable-static       \
+            --with-gcc-arch=x86-64 \
+            --disable-exec-static-tramp
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf libffi-3.4.2
+
+tar -xvf python.tar.xz
+cd Python-3.10.2
+./configure --prefix=/usr        \
+            --enable-shared      \
+            --with-system-expat  \
+            --with-system-ffi    \
+            --enable-optimizations
+make -j$(nproc)
+make install -j$(nproc)
+cat > /etc/pip.conf << EOF
+[global]
+root-user-action = ignore
+disable-pip-version-check = true
+EOF
+cd ..
+rm -rf Python-3.10.2
+
+tar -xvf wheel.tar.gz
+cd wheel-0.37.1
+pip3 install --no-index $PWD
+cd ..
+rm -rf wheel-0.37.1
+
+tar -xvf ninja.tar.gz
+cd ninja-1.10.2
+export NINJAJOBS=4
+sed -i '/int Guess/a \
+  int   j = 0;\
+  char* jobs = getenv( "NINJAJOBS" );\
+  if ( jobs != NULL ) j = atoi( jobs );\
+  if ( j > 0 ) return j;\
+' src/ninja.cc
+python3 configure.py --bootstrap
+install -vm755 ninja /usr/bin/
+install -vDm644 misc/bash-completion /usr/share/bash-completion/completions/ninja
+install -vDm644 misc/zsh-completion  /usr/share/zsh/site-functions/_ninja
+cd ..
+rm -rf ninja-1.10.2
+
+tar -xvf meson.tar.gz
+cd meson-0.61.1
+pip3 wheel -w dist --no-build-isolation --no-deps $PWD
+pip3 install --no-index --find-links dist meson
+install -vDm644 data/shell-completions/bash/meson /usr/share/bash-completion/completions/meson
+install -vDm644 data/shell-completions/zsh/_meson /usr/share/zsh/site-functions/_meson
+cd ..
+rm -rf meson-0.61.1
+
+tar -xvf coreutils.tar.xz
+cd coreutils-9.0
+patch -Np1 -i ../coreutils-9.1-i18n-1.patch
+autoreconf -fiv
+FORCE_UNSAFE_CONFIGURE=1 ./configure \
+            --prefix=/usr            \
+            --enable-no-install-program=kill,uptime
+make -j$(nproc)
+make install -j$(nproc)
+mv -v /usr/bin/chroot /usr/sbin
+cd ..
+rm -rf coreutils-9.0
+
+tar -xvf check.tar.gz
+cd check-0.15.2
+./configure --prefix=/usr --disable-static
+make -j$(nproc)
+make docdir=/usr/share/doc/check-0.15.2 install -j$(nproc)
+cd ..
+rm -rf check-0.15.2
+
+tar -xvf diffutils.tar.xz
+cd diffutils-3.8
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf diffutils-3.8
+
+tar -xvf gawk.tar.xz
+cd gawk-5.1.1
+sed -i 's/extras//' Makefile.in
+./configure --prefix=/usr
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf gawk-5.1.1
+
+tar -xvf findutils.tar.xz
+cd findutils-4.9.0
+case $(uname -m) in
+    i?86)   TIME_T_32_BIT_OK=yes ./configure --prefix=/usr --localstatedir=/var/lib/locate ;;
+    x86_64) ./configure --prefix=/usr --localstatedir=/var/lib/locate ;;
+esac
+make -j$(nproc)
+make install -j$(nproc)
+cd ..
+rm -rf findutils-4.9.0
+
+tar -xvf groff.tar.gz
+cd groff-1.22.4
+PAGE=A4 ./configure --prefix=/usr
+make -j1
+make install
+cd ..
+rm -rf groff-1.22.4
+
+tar -xvf grub.tar.xz
+cd grub-2.06
+./configure --prefix=/usr          \
+            --sysconfdir=/etc      \
+            --disable-efiemu       \
+            --disable-werror
+make -j$(nproc)
+make install -j$(nproc)
+mv -v /etc/bash_completion.d/grub /usr/share/bash-completion/completions
+cd ..
+rm -rf grub-2.06
 
 set -ex
