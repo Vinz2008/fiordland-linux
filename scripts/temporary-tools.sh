@@ -6,6 +6,7 @@ ROOTFS=$SOURCE_DIR/rootfs
 STAGING=$SOURCE_DIR/staging
 TARGET_VAR=$(uname -m)-lfs-linux-gnu
 export PATH=$PATH:$ROOTFS/cross-tools/bin
+sudo chmod a=rwx rootfs/* -R
 
 cd $STAGING
 wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz
@@ -24,6 +25,11 @@ wget -nc -O patch.tar.xz https://ftp.gnu.org/gnu/patch/patch-2.7.6.tar.xz
 wget -nc -O sed.tar.xz https://ftp.gnu.org/gnu/sed/sed-4.8.tar.xz
 wget -nc -O tar.tar.xz https://ftp.gnu.org/gnu/tar/tar-1.34.tar.xz
 wget -nc -O xz.tar.xz https://tukaani.org/xz/xz-5.2.5.tar.xz
+wget -nc -O binutils.tar.xz https://ftp.gnu.org/gnu/binutils/binutils-2.38.tar.xz
+wget -nc -O gcc.tar.xz https://ftp.gnu.org/gnu/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
+wget -nc -O mpfr.tar.xz https://www.mpfr.org/mpfr-4.1.0/mpfr-4.1.0.tar.xz
+wget -nc -O gmp.tar.xz https://ftp.gnu.org/gnu/gmp/gmp-6.2.1.tar.xz
+wget -nc -O mpc.tar.gz https://ftp.gnu.org/gnu/mpc/mpc-1.2.1.tar.gz
 
 
 set -ex
@@ -73,7 +79,7 @@ cd bash-5.1.16
             --without-bash-malloc
 make -j$(nproc)
 make DESTDIR=$ROOTFS install -j$(nproc)
-ln -sv bash $ROOTFS/bin/sh
+ln -svf bash $ROOTFS/bin/sh
 
 cd $STAGING
 rm -rf bash-5.1.16

@@ -24,11 +24,6 @@ set -ex
 
 set +ex
 
-
-
-
-
-
 cd $SOURCE_DIR
 
 # PREPARE CHROOT
@@ -153,7 +148,6 @@ cd $STAGING
 #wget -nc -O kernel.tar.xz http://kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz
 #wget -nc -O binutils.tar.bz2 http://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.bz2
 #wget -nc -O busybox.tar.bz2 http://busybox.net/downloads/busybox-${BUSYBOX_VERSION}.tar.bz2
-git clone https://github.com/memtest86plus/memtest86plus.git memtest86
 #wget -nc -O gcc.tar.bz2  http://gcc.gnu.org/pub/gcc/releases/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.bz2
 #wget -nc -O musl.tar.gz http://www.musl-libc.org/releases/musl-${MUSL_VERSION}.tar.gz
 #wget -nc -O mpfr.tar.bz2 http://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.bz2
@@ -175,11 +169,6 @@ tar -xvf kernel.tar.xz
 set -ex
 
 
-cd $STAGING
-cd memtest86/build64
-make -j$(nproc)
-cp memtest.bin $ROOTFS/boot/memtest
-
 
 
 
@@ -194,8 +183,8 @@ set timeout=30
 # Menu Colours
 set menu_color_normal=white/black
 set menu_color_highlight=white/green
-#root (hd0,0)
-search --file --no-floppy --set root /crux-media
+root (hd0,0)
+#search --file --no-floppy --set root /
 
 if loadfont unifont; then
   insmod efi_uga
@@ -207,10 +196,6 @@ fi
 menuentry "fiordland" {      
   linux   /boot/vmlinuz-5.19.2-lfs-11.2-systemd console=ttyS0,38400 console=tty0 ro
   initrd /boot/initramfs
-}
-
-menuentry "memtest" {
-  linux16 /boot/memtest
 }
 
 menuentry "UEFI Shell" {
@@ -228,7 +213,7 @@ menuentry "Halt" {
 EOF
 
 cd $SOURCE_DIR
-grub-mkrescue --compress=xz -o fiordland.iso rootfs
+sudo grub-mkrescue --compress=xz -o fiordland.iso rootfs
 #grub-mkimage -d iso/boot/grub/i386-pc -o iso/boot/grub/i386-pc/core-img -O i386-pc -p iso/boot/grub biosdisk iso9660
 #cat iso/boot/grub/i386-pc/cdboot.img iso/boot/grub/i386-pc/core.img > iso/boot/grub/i386-pc/eltorito.img
 #grub-mkimage -O x86_64-efi -p iso/boot/grub -o iso/efi/boot/bootx64.efi iso9660

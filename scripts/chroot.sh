@@ -1057,7 +1057,7 @@ cd ..
 rm -rf man-db-2.10.1
 
 tar -xvf procps-ng.tar.xz
-cd procps-ng-3.3.17
+cd procps-3.3.17
 ./configure --prefix=/usr                            \
             --docdir=/usr/share/doc/procps-ng-4.0.0 \
             --disable-static                         \
@@ -1066,7 +1066,7 @@ cd procps-ng-3.3.17
 make -j$(nproc)
 make install -j$(nproc)
 cd ..
-rm -rf procps-ng-3.3.17
+rm -rf procps-3.3.17
 
 tar -xvf util-linux.tar.xz
 cd util-linux-2.37.4

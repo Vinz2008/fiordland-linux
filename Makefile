@@ -1,4 +1,4 @@
-.PHONY: build
+.PHONY: system
 
 all:
 	./scripts/all.sh
@@ -13,8 +13,8 @@ cross-compiler:
 temporary-tools:
 	./scripts/temporary-tools.sh
 
-build:
-	./scripts/build.sh
+system:
+	./scripts/system.sh
 
 clean:
 	sudo umount -R rootfs/dev rootfs/proc rootfs/sys rootfs/run || /bin/true
