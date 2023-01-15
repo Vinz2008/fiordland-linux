@@ -127,7 +127,6 @@ rm -rf util-linux-2.37.4
 
 rm -rf /usr/share/{info,man,doc}/*
 find /usr/{lib,libexec} -name \*.la -delete
-rm -rf /cross-tools
 
 tar -xvf man-pages.tar.xz
 cd man-pages-5.13
@@ -461,7 +460,7 @@ pwconv
 grpconv
 mkdir -p /etc/default
 useradd -D --gid 999
-echo "\nroot\nroot\n" | passwd root
+echo -e "root\nroot" | passwd root
 cd ..
 rm -rf shadow-4.11.1
 
@@ -1130,6 +1129,5 @@ cd ..
 rm -rf linux-5.19.2
 
 rm -rf /tmp/*
-find /usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf
 
 set -ex

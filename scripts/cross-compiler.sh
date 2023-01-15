@@ -100,7 +100,7 @@ find usr/include -type f ! -name '*.h' -delete
 cp -rv usr/include $ROOTFS/usr
 
 cd $STAGING
-rm -rf linux-5.16.9
+rm -rf linux-5.19.2
 tar -xvf glibc.tar.xz
 cd glibc-2.35
 case $(uname -m) in
