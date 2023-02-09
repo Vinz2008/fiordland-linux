@@ -121,7 +121,8 @@ echo "rootsbindir=/usr/sbin" > configparms
       --enable-kernel=3.2                \
       --with-headers=$ROOTFS/usr/include    \
       libc_cv_slibdir=/usr/lib
-make -j$(nproc)
+#make -j$(nproc)
+make -j1
 make DESTDIR=$ROOTFS install -j$(nproc)
 sed '/RTLDLIST=/s@/usr@@g' -i $ROOTFS/usr/bin/ldd
 $ROOTFS/cross-tools/libexec/gcc/$TARGET_VAR/11.2.0/install-tools/mkheaders
