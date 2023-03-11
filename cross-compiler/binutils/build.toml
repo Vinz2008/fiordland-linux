@@ -1,0 +1,4 @@
+build_directory = true
+using_configure_and_make = true
+parallelism = true
+configure_options = "--prefix=$(realpath ../../..)/cross-tools --with-sysroot=$(realpath ../../..) --target=$(uname -m)-lfs-linux-gnu --disable-nls --enable-gprofng=no --disable-werror"

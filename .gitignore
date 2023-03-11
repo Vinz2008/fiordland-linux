@@ -2,3 +2,5 @@ iso
 rootfs
 staging
 *.iso
+downloads
+cross-tools
