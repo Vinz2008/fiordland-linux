@@ -1,0 +1,7 @@
+download_urls = ["https://anduin.linuxfromscratch.org/LFS/ncurses-6.4-20230520.tar.xz"]
+using_configure_and_make = true
+configure_options = "--prefix=/usr --host=$(uname -m)-lfs-linux-gnu --build=$(./config.guess) --mandir=/usr/share/man --with-manpage-format=normal --with-shared --without-normal --with-cxx-shared --without-debug --without-ada --disable-stripping --enable-widec"
+additional_commands = ["sed -i s/mawk// configure"]
+additional_commands_in_build_folder = ["mkdir build ; pushd build ; ../configure ; make -C include; make -C progs tic ; popd"]
+make_install_args = "DESTDIR=$ROOTFS TIC_PATH=$(pwd)/build/progs/tic "
+post_run_commands = ["ln -sv libncursesw.so $ROOTFS/usr/lib/libncurses.so", "sed -e 's/^#if.*XOPEN.*$/#if 1/' -i $ROOTFS/usr/include/curses.h"]

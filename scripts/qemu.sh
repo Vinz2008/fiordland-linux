@@ -1,1 +1,0 @@
-qemu-system-x86_64 -cdrom fiordland.iso -m 4G  -enable-kvm -usb -device usb-mouse -device usb-kbd

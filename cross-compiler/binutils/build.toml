@@ -1,4 +1,5 @@
+download_urls = ["https://sourceware.org/pub/binutils/releases/binutils-2.42.tar.xz"]
 build_directory = true
 using_configure_and_make = true
 parallelism = true
-configure_options = "--prefix=$(realpath ../../../..)/cross-tools --with-sysroot=$(realpath ../../..) --target=$(uname -m)-lfs-linux-gnu --disable-nls --enable-gprofng=no --disable-werror"
+configure_options = "--prefix=$INSTALL_PREFIX  --with-sysroot=$ROOTFS --target=$(uname -m)-lfs-linux-gnu --disable-nls --enable-gprofng=no --disable-werror --enable-default-hash-style=gnu"

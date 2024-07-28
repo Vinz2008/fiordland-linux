@@ -1,0 +1,5 @@
+download_urls = ["https://github.com/tukaani-project/xz/releases/download/v5.4.6/xz-5.4.6.tar.xz"]
+using_configure_and_make = true
+configure_options = "--prefix=/usr --host=$(uname -m)-lfs-linux-gnu --build=$(build-aux/config.guess) --disable-static --docdir=/usr/share/doc/xz-5.4.6"
+make_install_args = "DESTDIR=$ROOTFS"
+post_run_commands = ["rm -v $ROOTFS/usr/lib/liblzma.la"]

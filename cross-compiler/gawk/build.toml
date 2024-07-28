@@ -1,0 +1,5 @@
+download_urls = ["https://ftp.gnu.org/gnu/gawk/gawk-5.3.0.tar.xz"]
+using_configure_and_make = true
+configure_options = "--prefix=/usr --host=$(uname -m)-lfs-linux-gnu --build=$(build-aux/config.guess)"
+additional_commands = ["sed -i 's/extras//' Makefile.in"]
+make_install_args = "DESTDIR=$ROOTFS"

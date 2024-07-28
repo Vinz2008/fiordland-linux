@@ -1,0 +1,7 @@
+download_urls = ["https://astron.com/pub/file/file-5.45.tar.gz"]
+using_configure_and_make = true
+configure_options = "--prefix=/usr --host=$(uname -m)-lfs-linux-gnu --build=$(build-aux/config.guess)"
+additional_commands_in_build_folder = ["mkdir build; pushd build ;../configure --disable-bzlib --disable-libseccomp --disable-xzlib --disable-zlib ;make; popd"]
+make_args = "FILE_COMPILE=$(pwd)/build/src/file"
+make_install_args = "DESTDIR=$ROOTFS"
+post_run_commands = ["rm -v $ROOTFS/usr/lib/libmagic.la"]

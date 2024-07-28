@@ -1,0 +1,1 @@
+build_order = ["binutils", "gcc", "linux", "glibc", "libstdc++", "m4", "ncurses", "bash", "coreutils", "diffutils", "file", "findutils", "gawk", "grep", "gzip", "make", "patch", "sed", "tar", "xz", "binutils_pass2", "gcc_pass2"]

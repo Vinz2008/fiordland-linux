@@ -1,0 +1,4 @@
+download_urls = ["https://ftp.gnu.org/gnu/grep/grep-3.11.tar.xz"]
+using_configure_and_make = true
+configure_options = "--prefix=/usr --host=$(uname -m)-lfs-linux-gnu --build=$(build-aux/config.guess)"
+make_install_args = "DESTDIR=$ROOTFS"

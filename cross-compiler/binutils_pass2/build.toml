@@ -1,0 +1,7 @@
+using_configure_and_make = true
+build_directory = true
+parallelism = true
+additional_commands = ["sed '6009s/$add_dir//' -i ltmain.sh"]
+configure_options = "--prefix=/usr --build=$(../config.guess) --host=$(uname -m)-lfs-linux-gnu --disable-nls --enable-shared --enable-gprofng=no --disable-werror --enable-64-bit-bfd --enable-default-hash-style=gnu"
+make_install_args = "DESTDIR=$ROOTFS"
+post_run_commands = ["rm -v $ROOTFS/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}"]

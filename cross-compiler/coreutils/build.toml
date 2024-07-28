@@ -1,0 +1,5 @@
+download_urls = ["https://ftp.gnu.org/gnu/coreutils/coreutils-9.4.tar.xz"]
+using_configure_and_make = true
+configure_options = "--prefix=/usr --host=$(uname -m)-lfs-linux-gnu --build=$(build-aux/config.guess) --enable-install-program=hostname --enable-no-install-program=kill,uptime"
+make_install_args = "DESTDIR=$ROOTFS"
+post_run_commands = ["mv -v $ROOTFS/usr/bin/chroot $ROOTFS/usr/sbin", "mkdir -pv $ROOTFS/usr/share/man/man8", "mv -v $ROOTFS/usr/share/man/man1/chroot.1 $ROOTFS/usr/share/man/man8/chroot.8", "sed -i 's/\"1\"/\"8\"/' $ROOTFS/usr/share/man/man8/chroot.8"]

@@ -4,3 +4,6 @@ staging
 *.iso
 downloads
 cross-tools
+__pycache__
+**/build_finished
+.env

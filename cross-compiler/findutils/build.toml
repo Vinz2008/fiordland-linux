@@ -1,0 +1,4 @@
+download_urls = ["https://ftp.gnu.org/gnu/findutils/findutils-4.9.0.tar.xz"]
+using_configure_and_make = true
+configure_options = "--prefix=/usr --localstatedir=/var/lib/locate --host=$(uname -m)-lfs-linux-gnu --build=$(build-aux/config.guess)"
+make_install_args = "DESTDIR=$ROOTFS"

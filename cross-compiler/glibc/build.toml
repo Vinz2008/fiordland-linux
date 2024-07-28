@@ -1,0 +1,11 @@
+download_urls = ["https://ftp.gnu.org/gnu/glibc/glibc-2.39.tar.xz"]
+patch_urls = ["https://www.linuxfromscratch.org/patches/lfs/12.1/glibc-2.39-fhs-1.patch"]
+using_configure_and_make = true
+build_directory = true
+parallelism = true
+no_incremental_build = true
+configure_options = "--prefix=/usr --host=$(uname -m)-lfs-linux-gnu --build=$(../scripts/config.guess) --enable-kernel=4.19 --with-headers=$ROOTFS/usr/include --disable-nscd libc_cv_slibdir=/usr/lib"
+additional_commands = ["case $(uname -m) in i?86)   ln -sfv ld-linux.so.2 $ROOTFS/lib/ld-lsb.so.3 ;; x86_64) ln -sfv ../lib/ld-linux-x86-64.so.2 $ROOTFS/lib64 ; ln -sfv ../lib/ld-linux-x86-64.so.2 $ROOTFS/lib64/ld-lsb-x86-64.so.3 ;; esac"]
+additional_commands_in_build_folder = ["echo \"rootsbindir=/usr/sbin\" > configparms"]
+make_install_args = "DESTDIR=$ROOTFS"
+post_run_commands = ["sed '/RTLDLIST=/s@/usr@@g' -i $ROOTFS/usr/bin/ldd"]

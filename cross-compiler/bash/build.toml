@@ -1,0 +1,5 @@
+download_urls = ["https://ftp.gnu.org/gnu/bash/bash-5.2.21.tar.gz"]
+using_configure_and_make = true
+configure_options = "--prefix=/usr --build=$(sh support/config.guess) --host=$(uname -m)-lfs-linux-gnu --without-bash-malloc"
+make_install_args = "DESTDIR=$ROOTFS"
+post_run_commands = ["ln -sv bash $ROOTFS/bin/sh"]
